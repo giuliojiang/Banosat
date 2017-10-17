@@ -18,9 +18,11 @@ DATA STRUCTURES
 
         literal
             - signed int, where the abs(int) is the index of the variable
+        consider having literal = array[boolean]
 
         struct clause
             - list<literal>
+            - ? true? ignore?
 
     GRAPH
 
@@ -42,9 +44,9 @@ DATA STRUCTURES
 
 IMPORTANT METHODS
 
-    context::new_clause(int n, int* variables)
+    context::new_clause(int n, int* literals)
         - malloc clause
-        - for each of the variables:
+        - for each of the literals:
             - context::new_variable_if_not_exists
         - add literal to clause
         - for each variable in the clause, increment its clause count.
@@ -78,7 +80,7 @@ BUILDING BLOCKS
             get watched_clauses of the variable
             for each watched clauses:
                 if it has 1 variable (unassigned), check for inconsistencies. Computational optimization: add the literal values and check for 0. Eaaaazy. handle_conflict()
-                if it has 2 variables, add node + edge to the graph. Make sure to make all the edges from all the variables (even already assigned) of the clause, use the assignment map for this. Add current clause to unit clauses.
+                if it has 2 variables, add node + edge to the graph. Make sure to create all the edges from all the variables (even already assigned) of the clause, use the assignment map for this. Add current clause to unit clauses.
                 if it has >2 variables, choose another variable of the clause as watch literal.
         
     PLP
@@ -87,4 +89,7 @@ BUILDING BLOCKS
 
     ASSIGNMENT
 
-        
+    DECIDE WHICH ASSIGNMENT
+
+    HANDLE CONFLICT AND BACKTRACK
+    
