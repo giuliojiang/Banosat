@@ -1,0 +1,90 @@
+DATA STRUCTURES
+
+    CONTEXT
+
+        - list<clause> formula
+        - list<clause> conflict
+        - array<variable> variables. Index is also variable index.
+        - graph
+        - list<clause> unit_clauses
+        - map<variable, node> assignment_map
+
+    BASICS
+
+        variable
+            - int
+            - list<clause> watched_clauses. 0, 1 or 2 elements
+            - int clause_count. Number of clauses in which the variable participates
+
+        literal
+            - signed int, where the abs(int) is the index of the variable
+
+        struct clause
+            - list<literal>
+
+    GRAPH
+
+        node
+            - level
+            - variable
+            - negated?
+            - is_conflict_node?
+            - list<edge> incoming_edges
+            - list<edge> outgoing_edges
+
+        edge
+            - clause
+            - node from
+            - node to
+        
+        The overall graph has multiple roots.
+        Might need to stored in context also conflict node.
+
+IMPORTANT METHODS
+
+    context::new_clause(int n, int* variables)
+        - malloc clause
+        - for each of the variables:
+            - context::new_variable_if_not_exists
+        - add literal to clause
+        - for each variable in the clause, increment its clause count.
+        - add clause to formula
+        - add clause to unit_clauses if it has only 1 literal
+        - if clause has 0, 1, 2 literals, add to the variable's watched_clauses
+        - if clause has >2 literals, choose the first 2 literals and add to variable's watched_clauses
+    
+    context::new_variable_if_not_exists(int index)
+        - index = abs(index)
+        - if variables[index] exists, return index
+        - context::new_variable(index)
+
+    context::new_variable(int index)
+        - malloc variable
+        - initialize the watched clauses to empty
+        - initialize the clause count to empty
+
+BUILDING BLOCKS
+
+    PARSER
+
+        -   Read input file, parse into the context.
+            - context::new_clause for every line in the file
+
+    BCP
+
+        while unit_clauses not empty:
+            pop from unit clauses.
+            add to assignment map (whether true or false) if not already there
+            get watched_clauses of the variable
+            for each watched clauses:
+                if it has 1 variable (unassigned), check for inconsistencies. Computational optimization: add the literal values and check for 0. Eaaaazy. handle_conflict()
+                if it has 2 variables, add node + edge to the graph. Make sure to make all the edges from all the variables (even already assigned) of the clause, use the assignment map for this. Add current clause to unit clauses.
+                if it has >2 variables, choose another variable of the clause as watch literal.
+        
+    PLP
+
+        do it later because it's easy
+
+    ASSIGNMENT
+
+        
