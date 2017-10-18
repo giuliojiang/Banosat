@@ -50,4 +50,5 @@ void destroy(arrayList_t* list) {
         free(list->array[i]);
     }
     free(list->array);
+    free(list);
 }

@@ -21,6 +21,7 @@ clause_t* parseClause(const char* line) {
         insert(ret->literals, (void*)litPtr);
         token = strtok_r(NULL, " ", &savePtr);
     }
+    return ret;
 }
 
 int main(int argc, char **argv) {
@@ -60,14 +61,15 @@ int main(int argc, char **argv) {
             clauses[i++] = parseClause(line);
         }
     }
-    for(size_t x = 0; x < numClauses; x++) {
+    for(int x = 0; x < numClauses; x++) {
         printAll(clauses[x]->literals);
         destroy(clauses[x]->literals);
+        free(clauses[x]);
         printf("--\n");
     }
     printf("UNSAT\n");
     fclose(fp);
-
+    free(line);
     free(clauses);
     exit(EXIT_SUCCESS);
 }
