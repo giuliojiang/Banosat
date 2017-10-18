@@ -9,12 +9,12 @@
 typedef struct arrayList {
     size_t currIndex;
     size_t maxLen;
-    literal_t* array;
+    void** array;
 } arrayList_t;
 
 arrayList_t* createArrayList();
 
-void insert(arrayList_t* list, literal_t value);
+void insert(arrayList_t* list, void* value);
 
 void printAll(arrayList_t* list);
 

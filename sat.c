@@ -16,7 +16,9 @@ clause_t* parseClause(const char* line) {
         if(lit == 0) {
             return ret;
         }
-        insert(ret->literals, lit);
+        literal_t * litPtr = malloc(sizeof(literal_t*));
+        *litPtr = lit;
+        insert(ret->literals, (void*)litPtr);
         token = strtok_r(NULL, " ", &savePtr);
     }
 }
@@ -51,7 +53,7 @@ int main(int argc, char **argv) {
             assert(strncmp(str, "cnf", 4) == 0);
             assert(numVariables >= 0);
             assert(numClauses >= 0);
-            clauses = malloc(numClauses * sizeof(clause_t));
+            clauses = malloc(numClauses * sizeof(clause_t*));
             assert(clauses);
             printf("type: %s, nClauses: %d, nVariables: %d\n", str, numClauses, numVariables);
         } else {
