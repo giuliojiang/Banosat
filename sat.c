@@ -16,7 +16,7 @@ clause_t* parseClause(const char* line) {
         if(lit == 0) {
             return ret;
         }
-        literal_t * litPtr = malloc(sizeof(literal_t*));
+        literal_t * litPtr = malloc(sizeof(literal_t));
         *litPtr = lit;
         insert(ret->literals, (void*)litPtr);
         token = strtok_r(NULL, " ", &savePtr);

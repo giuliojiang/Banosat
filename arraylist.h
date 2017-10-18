@@ -18,5 +18,9 @@ void insert(arrayList_t* list, void* value);
 
 void printAll(arrayList_t* list);
 
+void set(arrayList_t* list, size_t index, void* value);
+
+void* get(arrayList_t* list, size_t index);
+
 void destroy(arrayList_t* list);
 #endif //SAT_ARRAYLIST_H
