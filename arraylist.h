@@ -12,15 +12,16 @@ typedef struct arrayList {
     void** array;
 } arrayList_t;
 
-arrayList_t* createArrayList();
+arrayList_t* arraylist_create();
 
-void insert(arrayList_t* list, void* value);
+void arraylist_insert(arrayList_t* list, void* value);
 
-void printAll(arrayList_t* list);
+void arraylist_print_all(arrayList_t* list);
 
-void set(arrayList_t* list, size_t index, void* value);
+void arraylist_set(arrayList_t* list, size_t index, void* value);
 
-void* get(arrayList_t* list, size_t index);
+void* arraylist_get(arrayList_t* list, size_t index);
 
-void destroy(arrayList_t* list);
+void arraylist_destroy(arrayList_t* list);
+
 #endif //SAT_ARRAYLIST_H

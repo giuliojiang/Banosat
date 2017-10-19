@@ -6,11 +6,11 @@
 #include "arraylist.h"
 #include "clause.h"
 
-clause_t* parseClause(const char* line) {
+clause_t* parseClause(char* line) {
     char* savePtr;
     char* token = strtok_r(line, " ", &savePtr);
     clause_t* ret = (clause_t*) malloc(sizeof(clause_t));
-    ret->literals = createArrayList();
+    ret->literals = arraylist_create();
     while(token != NULL) {
         signed lit = atoi(token);
         if(lit == 0) {
@@ -18,7 +18,7 @@ clause_t* parseClause(const char* line) {
         }
         literal_t * litPtr = malloc(sizeof(literal_t));
         *litPtr = lit;
-        insert(ret->literals, (void*)litPtr);
+        arraylist_insert(ret->literals, (void*)litPtr);
         token = strtok_r(NULL, " ", &savePtr);
     }
     return ret;
@@ -62,8 +62,8 @@ int main(int argc, char **argv) {
         }
     }
     for(int x = 0; x < numClauses; x++) {
-        printAll(clauses[x]->literals);
-        destroy(clauses[x]->literals);
+        arraylist_print_all(clauses[x]->literals);
+        arraylist_destroy(clauses[x]->literals);
         free(clauses[x]);
         printf("--\n");
     }
