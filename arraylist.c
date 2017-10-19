@@ -57,3 +57,9 @@ void arraylist_destroy(arrayList_t* list) {
 size_t arraylist_size(arrayList_t* list) {
     return list->currIndex;
 }
+
+void arraylist_foreach(arrayList_t* list, voidF_t function) {
+    for(size_t i = 0; i < list->currIndex; i++) {
+        function(list->array[i]);
+    }
+}

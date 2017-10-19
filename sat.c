@@ -7,6 +7,11 @@
 #include "clause.h"
 #include "context.h"
 
+static inline void clearClauses(void* elem) {
+    clause_t* clause = (clause_t*) elem;
+    arraylist_destroy(clause->literals);
+}
+
 clause_t* parseClause(char* line) {
     char* savePtr;
     char* token = strtok_r(line, " ", &savePtr);
@@ -57,12 +62,6 @@ int main(int argc, char **argv) {
             arraylist_insert(clauses, parseClause(line));
         }
     }
-    /*for(int x = 0; x < numClauses; x++) {
-        //arraylist_print_all(clauses[x]->literals);
-        arraylist_destroy(clauses[x]->literals);
-        free(clauses[x]);
-        printf("--\n");
-    }*/
 
     // Create context
     context_t* context = context_create();
@@ -72,8 +71,8 @@ int main(int argc, char **argv) {
     printf("UNSAT\n");
     fclose(fp);
     free(line);
-    // TODO we also need to free the content of the clause
-    // make a foreach method in the arraylist? Or an iterator?
+    arraylist_foreach(clauses, &clearClauses);
     arraylist_destroy(clauses);
+    free(context);
     exit(EXIT_SUCCESS);
 }
