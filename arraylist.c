@@ -12,6 +12,7 @@
 
 arrayList_t* arraylist_create() {
     arrayList_t* ret = malloc(sizeof(arrayList_t));
+    assert(ret);
     ret->array = calloc(BASE_MAX_LEN, sizeof(void*));
     ret->currIndex = 0;
     ret->maxLen = BASE_MAX_LEN;
@@ -51,4 +52,8 @@ void arraylist_destroy(arrayList_t* list) {
     }
     free(list->array);
     free(list);
+}
+
+size_t arraylist_size(arrayList_t* list) {
+    return list->currIndex;
 }

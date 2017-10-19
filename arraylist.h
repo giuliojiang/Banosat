@@ -3,8 +3,9 @@
 #ifndef SAT_ARRAYLIST_H
 #define SAT_ARRAYLIST_H
 
-
 #include "literal.h"
+
+#include "stddef.h"
 
 typedef struct arrayList {
     size_t currIndex;
@@ -23,5 +24,7 @@ void arraylist_set(arrayList_t* list, size_t index, void* value);
 void* arraylist_get(arrayList_t* list, size_t index);
 
 void arraylist_destroy(arrayList_t* list);
+
+size_t arraylist_size(arrayList_t* list);
 
 #endif //SAT_ARRAYLIST_H

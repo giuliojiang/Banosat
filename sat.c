@@ -5,6 +5,7 @@
 
 #include "arraylist.h"
 #include "clause.h"
+#include "context.h"
 
 clause_t* parseClause(char* line) {
     char* savePtr;
@@ -39,37 +40,40 @@ int main(int argc, char **argv) {
     ssize_t read;
     char* line = NULL;
     size_t len = 0;
-    size_t i = 0;
     // our variables
     int numVariables = -1;
-    int numClauses = -1;
-    clause_t** clauses = NULL;
+    arrayList_t* clauses = arraylist_create();
     while ((read = getline(&line, &len, fp)) != -1) {
         if(line[0] == 'c') {
             continue;
         }
         if(line[0] == 'p') {
             char str[4];
-            sscanf(line, "p %s %d %d", str, &numVariables, &numClauses);
+            sscanf(line, "p %s %d %*d", str, &numVariables);
             assert(strncmp(str, "cnf", 4) == 0);
             assert(numVariables >= 0);
-            assert(numClauses >= 0);
-            clauses = malloc(numClauses * sizeof(clause_t*));
-            assert(clauses);
-            printf("type: %s, nClauses: %d, nVariables: %d\n", str, numClauses, numVariables);
+            printf("type: %s, nVariables: %d\n", str, numVariables);
         } else {
-            clauses[i++] = parseClause(line);
+            arraylist_insert(clauses, parseClause(line));
         }
     }
-    for(int x = 0; x < numClauses; x++) {
-        arraylist_print_all(clauses[x]->literals);
+    /*for(int x = 0; x < numClauses; x++) {
+        //arraylist_print_all(clauses[x]->literals);
         arraylist_destroy(clauses[x]->literals);
         free(clauses[x]);
         printf("--\n");
-    }
+    }*/
+
+    // Create context
+    context_t* context = context_create();
+    context_set_formula(context, clauses);
+    context_print_formula(context);
+
     printf("UNSAT\n");
     fclose(fp);
     free(line);
-    free(clauses);
+    // TODO we also need to free the content of the clause
+    // make a foreach method in the arraylist? Or an iterator?
+    arraylist_destroy(clauses);
     exit(EXIT_SUCCESS);
 }
