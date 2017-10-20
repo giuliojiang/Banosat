@@ -67,7 +67,41 @@ void* linkedlist_remove_node(linkedlist_t* this, linkedlist_node_t* node) {
 }
 
 void linkedlist_foreach(linkedlist_t* this, linkedlist_node_consumer consumer, void* aux) {
+    linkedlist_node_t* current = this->head->next;
+    linkedlist_node_t* next = NULL;
+    while (current != this->tail) {
+        next = current->next;
+        consumer(current, aux);
+        current = next;
+    }
+
+    // This version causes undefined behaviour when using the consumer to
+    // free the current node, as the next iteration is going to
+    // use current->next to load the next node, but current has already
+    // been freed
+    /*
     for (linkedlist_node_t* current = this->head->next; current != this->tail; current = current->next) {
         consumer(current, aux);
     }
+     */
+}
+
+// Destroy linkedlist ---------------------------------------------------------
+
+static void linkedlist_destroy_node_destroyer(linkedlist_node_t* node, void* aux) {
+    linkedlist_node_destroy(node);
+}
+
+void linkedlist_destroy(linkedlist_t* this, linkedlist_node_consumer destroy_function, void* aux) {
+    // If a destroy function is provided, destroy each element
+    if (destroy_function) {
+        linkedlist_foreach(this, destroy_function, aux);
+    }
+    // Destroy each of the nodes
+    linkedlist_foreach(this, linkedlist_destroy_node_destroyer, NULL);
+    // Destroy head and tail
+    linkedlist_node_destroy(this->head);
+    linkedlist_node_destroy(this->tail);
+    // Free the linkedlist
+    free(this);
 }

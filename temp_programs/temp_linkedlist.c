@@ -1,9 +1,10 @@
-#include "linkedlist.h"
+#include "../linkedlist.h"
 
-#include <stdlib.h>z
+#include <stdlib.h>
+#include <stdio.h>
 
 static void linkedlist_print_node(linkedlist_node_t* node, void* aux) {
-    printf("%d\n", node->value);
+    printf("%ld\n", (long) node->value);
 }
 
 int main(int argc, char** argv) {
@@ -21,8 +22,10 @@ int main(int argc, char** argv) {
     linkedlist_foreach(the_list, &linkedlist_print_node, NULL);
     // Remove node 1
     void* removed_value = linkedlist_remove_node(the_list, node_1);
-    printf("Removed: %d \n", removed_value);
+    printf("Removed: %ld \n", (long) removed_value);
     // Print
     printf("List is \n");
     linkedlist_foreach(the_list, &linkedlist_print_node, NULL);
+    // Free everything
+    linkedlist_destroy(the_list, NULL, NULL);
 }

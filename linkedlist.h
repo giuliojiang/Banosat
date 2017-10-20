@@ -33,4 +33,6 @@ void* linkedlist_remove_node(linkedlist_t* this, linkedlist_node_t* node);
 
 void linkedlist_foreach(linkedlist_t* this, linkedlist_node_consumer consumer, void* aux);
 
+void linkedlist_destroy(linkedlist_t* this, linkedlist_node_consumer destroy_function, void* aux);
+
 #endif
