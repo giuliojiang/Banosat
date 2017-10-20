@@ -1,10 +1,14 @@
 #include "arraymap.h"
 
+// Create ---------------------------------------------------------------------
+
 arraymap_t* arraymap_create() {
     arraymap_t* ret = malloc(sizeof(arraymap_t));
     ret->arraylist = arraylist_create();
     return ret;
 }
+
+// Put ------------------------------------------------------------------------
 
 void arraymap_put(arraymap_t* this, size_t key, void* value) {
     arrayList_t* arraylist = this->arraylist;
@@ -15,6 +19,8 @@ void arraymap_put(arraymap_t* this, size_t key, void* value) {
     // Insert item
     arraylist_set(arraylist, key, value);
 }
+
+// Get ------------------------------------------------------------------------
 
 void* arraymap_get(arraymap_t* this, size_t key) {
     size_t size = arraylist_size(this->arraylist);
