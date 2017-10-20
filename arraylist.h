@@ -6,14 +6,13 @@
 #include "literal.h"
 
 #include "stddef.h"
+#include "function.h"
 
 typedef struct arrayList {
     size_t currIndex;
     size_t maxLen;
     void** array;
 } arrayList_t;
-
-typedef void(*voidF_t)(void *);
 
 arrayList_t* arraylist_create();
 
@@ -25,10 +24,10 @@ void arraylist_set(arrayList_t* list, size_t index, void* value);
 
 void* arraylist_get(arrayList_t* list, size_t index);
 
-void arraylist_destroy(arrayList_t* list, voidF_t destroyer);
+void arraylist_destroy(arrayList_t* list, voidp_consumer destroyer, void* aux);
 
 size_t arraylist_size(arrayList_t* list);
 
-void arraylist_foreach(arrayList_t* list, voidF_t function);
+void arraylist_foreach(arrayList_t* list, voidp_consumer function, void* aux);
 
 #endif //SAT_ARRAYLIST_H
