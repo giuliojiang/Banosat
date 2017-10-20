@@ -1,0 +1,67 @@
+Truth formula example
+
+    (p v q) (a v b)
+    unsat: 0, 1
+
+    - suppose we assign p = true, without running BCP
+
+    (p v q) (a v ¬b)
+     T
+    unsat: 0, 1
+
+    - suppose we assign q = true, without running BCP
+
+    (p v q) (a v ¬b)
+     T   T
+    unsat: 1
+
+    - suppose we assign a = true, b = false
+    (p v q) (a v ¬b)
+     T   T   T    T
+    unsat: none
+    Formula is now T
+
+Falsity formula example
+
+    (p v q) (a v b)
+    unsat: 0, 1
+    conflicting: none
+
+    - suppose we assign p = false, without running BCP
+
+    (p v q) (a v ¬b)
+     F
+    unsat: 0, 1
+    conflicting: none
+
+    - suppose we assign q = false (would not happen due to BCP but let's just suppose that because of some other clause or decision we assign that)
+
+    (p v q) (a v ¬b)
+     F   F
+    unsat: 0, 1
+    conflicting: 0
+    Formula is now F
+
+    - suppose we un-assign q (backtrack)
+
+    variable q {
+        participating clauses: [0]
+    }
+
+    so go in clause 0 -> (p v q)
+    clause 0 {
+        participating_unsat: pointer to the entry in unsat
+        participating_conflicting: pointer to the entry in conflicting
+    }
+
+    undo assignment q
+    
+    if participating_conflicting is not NULL: remove that node from conflicting list
+
+    if participating_unsat is NULL, add this clause to unsat list
+
+Function: is True (formula)
+
+    If conflicting list is not empty -> F
+    If unsat list is empty -> T
+    Otherwise -> Unknown
