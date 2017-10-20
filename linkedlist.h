@@ -33,6 +33,7 @@ void* linkedlist_remove_node(linkedlist_t* this, linkedlist_node_t* node);
 
 void linkedlist_foreach(linkedlist_t* this, linkedlist_node_consumer consumer, void* aux);
 
+// The destroy_function is responsible of freeing the pointer stored in the node, but not the node itself
 void linkedlist_destroy(linkedlist_t* this, linkedlist_node_consumer destroy_function, void* aux);
 
 #endif

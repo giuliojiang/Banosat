@@ -54,9 +54,6 @@ void arraylist_destroy(arrayList_t* list, voidp_consumer destroyer, void* aux) {
     if (destroyer) {
         arraylist_foreach(list, destroyer, aux);
     }
-    // NOTE: Good candidate for use after free!
-    // Call free on each element
-    arraylist_foreach(list, &arraylist_destroy_free, NULL);
     // Free array and list itself
     free(list->array);
     free(list);

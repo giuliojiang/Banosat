@@ -25,9 +25,14 @@ void context_print_formula(context_t* this) {
     }
 }
 
+static void clearClauses_destroyer(void* list_elem, void* aux) {
+    free(list_elem);
+}
+
 static void clearClauses(void* elem, void* aux) {
     clause_t* clause = (clause_t*) elem;
-    arraylist_destroy(clause->literals, NULL, NULL);
+    arraylist_destroy(clause->literals, clearClauses_destroyer, NULL);
+    free(clause);
 }
 
 void context_destroy(context_t* this) {

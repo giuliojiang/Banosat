@@ -40,12 +40,21 @@ typedef struct arraymap_foreach_pair_data {
 } arraymap_foreach_pair_data_t;
 
 static void arraymap_foreach_pair_consumer(void* element, void* aux) {
+
+    // Auxiliary data stores the user-supplied function and the index counter
     arraymap_foreach_pair_data_t* data = (arraymap_foreach_pair_data_t*) aux;
-    data->f(data->counter, element, data->payload_aux);
     data->counter++;
+    // NULL elements are taken as non-present in the map
+    if (!element) {
+        return;
+    }
+    data->f(data->counter, element, data->payload_aux);
 }
 
 void arraymap_foreach_pair(arraymap_t* this, arraymap_pair_consumer consumer, void* aux) {
+    if (!consumer) {
+        return;
+    }
     arrayList_t* arraylist = this->arraylist;
     arraymap_foreach_pair_data_t data;
     data.counter = 0;
@@ -56,9 +65,12 @@ void arraymap_foreach_pair(arraymap_t* this, arraymap_pair_consumer consumer, vo
 
 // Destroy --------------------------------------------------------------------
 
+
 void arraymap_destroy(arraymap_t* this, arraymap_pair_consumer destroyer, void* aux) {
     // Destroy each of the elements
     arraymap_foreach_pair(this, destroyer, aux);
     // Free the arraylist
     arraylist_destroy(this->arraylist, NULL, NULL);
+    // Free this
+    free(this);
 }

@@ -1,4 +1,4 @@
-CFLAGS=-I. -Wall -Wextra -Wpedantic $(flags)
+CFLAGS=-I. -Wall -Wextra -Wpedantic $(flags) -g
 
 DEPS = $(wildcard *.h)
 SRCS=$(wildcard *.c)
