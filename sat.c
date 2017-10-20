@@ -5,12 +5,13 @@
 
 #include "arraylist.h"
 #include "clause.h"
+#include "context.h"
 
-clause_t* parseClause(const char* line) {
+clause_t* parseClause(char* line) {
     char* savePtr;
     char* token = strtok_r(line, " ", &savePtr);
     clause_t* ret = (clause_t*) malloc(sizeof(clause_t));
-    ret->literals = createArrayList();
+    ret->literals = arraylist_create();
     while(token != NULL) {
         signed lit = atoi(token);
         if(lit == 0) {
@@ -18,7 +19,7 @@ clause_t* parseClause(const char* line) {
         }
         literal_t * litPtr = malloc(sizeof(literal_t));
         *litPtr = lit;
-        insert(ret->literals, (void*)litPtr);
+        arraylist_insert(ret->literals, (void*)litPtr);
         token = strtok_r(NULL, " ", &savePtr);
     }
     return ret;
@@ -39,37 +40,32 @@ int main(int argc, char **argv) {
     ssize_t read;
     char* line = NULL;
     size_t len = 0;
-    size_t i = 0;
     // our variables
     int numVariables = -1;
-    int numClauses = -1;
-    clause_t** clauses = NULL;
+    arrayList_t* clauses = arraylist_create();
     while ((read = getline(&line, &len, fp)) != -1) {
         if(line[0] == 'c') {
             continue;
         }
         if(line[0] == 'p') {
             char str[4];
-            sscanf(line, "p %s %d %d", str, &numVariables, &numClauses);
+            sscanf(line, "p %s %d %*d", str, &numVariables);
             assert(strncmp(str, "cnf", 4) == 0);
             assert(numVariables >= 0);
-            assert(numClauses >= 0);
-            clauses = malloc(numClauses * sizeof(clause_t*));
-            assert(clauses);
-            printf("type: %s, nClauses: %d, nVariables: %d\n", str, numClauses, numVariables);
+            printf("type: %s, nVariables: %d\n", str, numVariables);
         } else {
-            clauses[i++] = parseClause(line);
+            arraylist_insert(clauses, parseClause(line));
         }
     }
-    for(int x = 0; x < numClauses; x++) {
-        printAll(clauses[x]->literals);
-        destroy(clauses[x]->literals);
-        free(clauses[x]);
-        printf("--\n");
-    }
+
+    // Create context
+    context_t* context = context_create();
+    context_set_formula(context, clauses);
+    context_print_formula(context);
+
     printf("UNSAT\n");
     fclose(fp);
     free(line);
-    free(clauses);
+    context_destroy(context);
     exit(EXIT_SUCCESS);
 }
