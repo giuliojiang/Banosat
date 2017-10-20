@@ -16,4 +16,6 @@ void context_add_conflict_clause(context_t* this, clause_t* clause);
 
 void context_print_formula(context_t* this);
 
+void context_destroy(context_t* this);
+
 #endif

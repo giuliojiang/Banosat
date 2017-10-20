@@ -24,3 +24,13 @@ void context_print_formula(context_t* this) {
         arraylist_print_all(((clause_t*) arraylist_get(formula, i))->literals);
     }
 }
+
+static void clearClauses(void* elem) {
+    clause_t* clause = (clause_t*) elem;
+    arraylist_destroy(clause->literals, NULL);
+}
+
+void context_destroy(context_t* this) {
+    arraylist_destroy(this->formula, &clearClauses);
+    free(this);
+}

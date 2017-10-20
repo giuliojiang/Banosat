@@ -7,11 +7,6 @@
 #include "clause.h"
 #include "context.h"
 
-static inline void clearClauses(void* elem) {
-    clause_t* clause = (clause_t*) elem;
-    arraylist_destroy(clause->literals);
-}
-
 clause_t* parseClause(char* line) {
     char* savePtr;
     char* token = strtok_r(line, " ", &savePtr);
@@ -71,8 +66,6 @@ int main(int argc, char **argv) {
     printf("UNSAT\n");
     fclose(fp);
     free(line);
-    arraylist_foreach(clauses, &clearClauses);
-    arraylist_destroy(clauses);
-    free(context);
+    context_destroy(context);
     exit(EXIT_SUCCESS);
 }

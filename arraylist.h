@@ -25,7 +25,7 @@ void arraylist_set(arrayList_t* list, size_t index, void* value);
 
 void* arraylist_get(arrayList_t* list, size_t index);
 
-void arraylist_destroy(arrayList_t* list);
+void arraylist_destroy(arrayList_t* list, voidF_t destroyer);
 
 size_t arraylist_size(arrayList_t* list);
 

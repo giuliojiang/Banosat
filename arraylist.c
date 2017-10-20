@@ -45,11 +45,15 @@ void* arraylist_get(arrayList_t* list, size_t index) {
     return list->array[index];
 }
 
-void arraylist_destroy(arrayList_t* list) {
-    // Good candidate for use after free!
-    for(size_t i = 0; i < list->currIndex; i++) {
-        free(list->array[i]);
+void arraylist_destroy(arrayList_t* list, voidF_t destroyer) {
+    // Destroy each element using the provided destroyer
+    if (destroyer) {
+        arraylist_foreach(list, destroyer);
     }
+    // NOTE: Good candidate for use after free!
+    // Call free on each element
+    arraylist_foreach(list, &free);
+    // Free array and list itself
     free(list->array);
     free(list);
 }
