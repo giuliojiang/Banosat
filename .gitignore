@@ -1,2 +1,4 @@
 *.o
 sat
+.idea/
+cmake-build-debug/
