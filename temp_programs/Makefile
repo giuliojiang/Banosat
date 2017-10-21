@@ -1,6 +1,10 @@
 CFLAGS=-I. -Wall -Wextra -Wpedantic -g $(flags)
 
-temp_linkedlist:  temp_linkedlist.o ../linkedlist.o
+all: temp_linkedlist temp_arraymap
+
+temp_linkedlist: temp_linkedlist.o ../linkedlist.o
+
+temp_arraymap: temp_arraymap.o ../arraymap.o ../arraylist.o
 
 clean:
 	rm -rf *.o
