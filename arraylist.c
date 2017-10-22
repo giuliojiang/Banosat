@@ -8,7 +8,6 @@
 #include "arraylist.h"
 
 #define BASE_MAX_LEN 16
-#define BOUND_CHECK(len, i) assert(i < len)
 
 arrayList_t* arraylist_create() {
     arrayList_t* ret = malloc(sizeof(arrayList_t));
@@ -45,9 +44,6 @@ void* arraylist_get(arrayList_t* list, size_t index) {
     return list->array[index];
 }
 
-static void arraylist_destroy_free(void* item, void* aux) {
-    free(item);
-}
 
 void arraylist_destroy(arrayList_t* list, voidp_consumer destroyer, void* aux) {
     // Destroy each element using the provided destroyer

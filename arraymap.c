@@ -63,6 +63,7 @@ void arraymap_foreach_pair(arraymap_t* this, arraymap_pair_consumer consumer, vo
     arraylist_foreach(arraylist, arraymap_foreach_pair_consumer, &data);
 }
 
+
 // Destroy --------------------------------------------------------------------
 
 

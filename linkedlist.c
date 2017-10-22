@@ -1,6 +1,7 @@
 #include <stdlib.h>
-#include "linkedlist.h"
 
+#include "linkedlist.h"
+#include "macros.h"
 // [private] Create/destroy nodes ---------------------------------------------
 
 static linkedlist_node_t* linkedlist_node_create() {
@@ -88,7 +89,7 @@ void linkedlist_foreach(linkedlist_t* this, linkedlist_node_consumer consumer, v
 
 // Destroy linkedlist ---------------------------------------------------------
 
-static void linkedlist_destroy_node_destroyer(linkedlist_node_t* node, void* aux) {
+static void linkedlist_destroy_node_destroyer(linkedlist_node_t* node, void* UNUSED(aux)) {
     linkedlist_node_destroy(node);
 }
 

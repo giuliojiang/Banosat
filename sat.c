@@ -6,8 +6,9 @@
 #include "arraylist.h"
 #include "clause.h"
 #include "context.h"
+#include "variable.h"
 
-clause_t* parseClause(char* line) {
+clause_t* parseClause(char* line, arraymap_t* variables) {
     char* savePtr;
     char* token = strtok_r(line, " ", &savePtr);
     clause_t* ret = (clause_t*) malloc(sizeof(clause_t));
@@ -20,6 +21,7 @@ clause_t* parseClause(char* line) {
         literal_t * litPtr = malloc(sizeof(literal_t));
         *litPtr = lit;
         arraylist_insert(ret->literals, (void*)litPtr);
+        variable_add_value_into_map(variables, lit, ret);
         token = strtok_r(NULL, " ", &savePtr);
     }
     return ret;
@@ -37,13 +39,13 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    ssize_t read;
     char* line = NULL;
     size_t len = 0;
     // our variables
     int numVariables = -1;
     arrayList_t* clauses = arraylist_create();
-    while ((read = getline(&line, &len, fp)) != -1) {
+    arraymap_t* variables = arraymap_create();
+    while ((getline(&line, &len, fp)) != -1) {
         if(line[0] == 'c') {
             continue;
         }
@@ -54,13 +56,14 @@ int main(int argc, char **argv) {
             assert(numVariables >= 0);
             printf("type: %s, nVariables: %d\n", str, numVariables);
         } else {
-            arraylist_insert(clauses, parseClause(line));
+            arraylist_insert(clauses, parseClause(line, variables));
         }
     }
 
     // Create context
     context_t* context = context_create();
     context_set_formula(context, clauses);
+    context_set_variables(context, variables);
     context_print_formula(context);
 
     printf("UNSAT\n");
