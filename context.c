@@ -30,9 +30,10 @@ void context_print_formula(context_t* this) {
     }
 }
 
-void context_destroy_variables(size_t key, void* value, void* aux) {
+static void context_destroy_variables(size_t UNUSED(key), void* value, void* UNUSED(aux)) {
     variable_t* var = (variable_t*) value;
     variable_destroy(var);
+    free(value);
 }
 void context_destroy(context_t* this) {
     arraylist_destroy(this->formula, &clause_destroy, NULL);

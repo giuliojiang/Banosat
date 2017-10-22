@@ -8,7 +8,6 @@
 #include "arraylist.h"
 
 #define BASE_MAX_LEN 16
-#define BOUND_CHECK(len, i) assert(i < len)
 
 arrayList_t* arraylist_create() {
     arrayList_t* ret = malloc(sizeof(arrayList_t));

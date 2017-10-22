@@ -4,6 +4,7 @@
 #define SAT_CLAUSE_H
 
 #include "arraylist.h"
+#include "macros.h"
 
 typedef struct clause {
     arrayList_t* literals;
@@ -11,8 +12,9 @@ typedef struct clause {
 } clause_t;
 
 
-static inline void clause_destroy(void* elem, void* aux) {
+static inline void clause_destroy(void* elem, void* UNUSED(aux)) {
     clause_t* clause = (clause_t*) elem;
     arraylist_destroy(clause->literals, &arraylist_destroy_free, NULL);
+    free(elem);
 }
 #endif //SAT_CLAUSE_H

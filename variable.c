@@ -5,6 +5,7 @@
 variable_t* variable_create() {
     variable_t* ret = (variable_t*) malloc(sizeof(variable_t));
     ret->partecipatingClauses = NULL;
+    return ret;
 }
 
 void variable_insert_clause(variable_t* this, clause_t* clause) {
@@ -28,4 +29,5 @@ void variable_add_value_into_map(arraymap_t *map, literal_t lit, clause_t* claus
 
 void variable_destroy(variable_t* variable) {
     arraylist_destroy(variable->partecipatingClauses, &clause_destroy, NULL);
+    free(variable);
 }

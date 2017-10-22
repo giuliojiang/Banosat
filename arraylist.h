@@ -3,10 +3,12 @@
 #ifndef SAT_ARRAYLIST_H
 #define SAT_ARRAYLIST_H
 
-#include "literal.h"
+#include <stddef.h>
+#include <stdlib.h>
 
-#include "stddef.h"
 #include "function.h"
+#include "literal.h"
+#include "macros.h"
 
 typedef struct arrayList {
     size_t currIndex;
@@ -30,7 +32,7 @@ size_t arraylist_size(arrayList_t* list);
 
 void arraylist_foreach(arrayList_t* list, voidp_consumer function, void* aux);
 
-static inline void arraylist_destroy_free(void* item, void* aux __attribute__((unused))) {
+static inline void arraylist_destroy_free(void* item, void* UNUSED(aux)) {
     free(item);
 }
 
