@@ -4,5 +4,4 @@
 #define SAT_LITERAL_H
 
 typedef signed literal_t;
-
 #endif //SAT_LITERAL_H

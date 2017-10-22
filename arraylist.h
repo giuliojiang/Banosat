@@ -30,4 +30,8 @@ size_t arraylist_size(arrayList_t* list);
 
 void arraylist_foreach(arrayList_t* list, voidp_consumer function, void* aux);
 
+static inline void arraylist_destroy_free(void* item, void* aux __attribute__((unused))) {
+    free(item);
+}
+
 #endif //SAT_ARRAYLIST_H
