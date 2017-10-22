@@ -11,7 +11,7 @@
 #include "clause.h"
 
 typedef struct variable {
-    arrayList_t* partecipatingClauses;
+    arrayList_t* participatingClauses;
     // More to come
 } variable_t;
 
