@@ -13,6 +13,8 @@ clause_t* parseClause(char* line, arraymap_t* variables) {
     char* token = strtok_r(line, " ", &savePtr);
     clause_t* ret = (clause_t*) malloc(sizeof(clause_t));
     ret->literals = arraylist_create();
+    ret->participating_conflicting = NULL;
+    ret->participating_unsat = NULL;
     while(token != NULL) {
         signed lit = atoi(token);
         if(lit == 0) {
@@ -63,6 +65,7 @@ int main(int argc, char **argv) {
     // Create context
     context_t* context = context_create();
     context_set_formula(context, clauses);
+    context_set_all_unsat(context, clauses);
     context_set_variables(context, variables);
     context_print_formula(context);
 
