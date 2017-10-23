@@ -17,17 +17,17 @@ void variable_insert_clause(variable_t* this, clause_t* clause) {
 
 void variable_add_value_into_map(arraymap_t *map, literal_t lit, clause_t* clause) {
     size_t absLit = (size_t) abs(lit);
-    clause_t* copyClause = malloc(sizeof(clause_t));
     variable_t* var = arraymap_get(map, absLit);
     if(!var) {
         var = variable_create();
         arraymap_put(map, absLit, var);
     }
-    *copyClause = *clause;
-    variable_insert_clause(var, copyClause);
+    variable_insert_clause(var, clause);
 }
 
+// variable_destroy -----------------------------------------------------------
+
 void variable_destroy(variable_t* variable) {
-    arraylist_destroy(variable->participatingClauses, &clause_destroy, NULL);
+    arraylist_destroy(variable->participatingClauses, NULL, NULL);
     free(variable);
 }
