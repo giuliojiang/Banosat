@@ -5,6 +5,7 @@
 variable_t* variable_create() {
     variable_t* ret = (variable_t*) malloc(sizeof(variable_t));
     ret->participatingClauses = NULL;
+    ret->currentAssignment = 0;
     return ret;
 }
 
@@ -30,4 +31,8 @@ void variable_add_value_into_map(arraymap_t *map, literal_t lit, clause_t* claus
 void variable_destroy(variable_t* variable) {
     arraylist_destroy(variable->participatingClauses, NULL, NULL);
     free(variable);
+}
+
+void variable_set_value(variable_t* variable, bool new_value) {
+    this->current_assignment = new_value ? 1 : -1;
 }

@@ -5,9 +5,11 @@
 #include "arraymap.h"
 
 typedef struct context {
-    arrayList_t* formula; // ArrayList of clauses
-    arrayList_t* conflicts; // ArrayList of clauses
-    arraymap_t* variables;
+    arrayList_t* formula; // ArrayList of clause_t
+    arrayList_t* conflicts; // ArrayList of clause_t
+    arraymap_t* variables; // Map from unsigned -> variable_t
+    linkedlist_t* conflicting; // False clauses (clause_t)
+    linkedlist_t* unsat; // Unsatisfied clauses (clause_t)
 } context_t;
 
 context_t* context_create();
@@ -22,4 +24,5 @@ void context_print_formula(context_t* this);
 
 void context_destroy(context_t* this);
 
+void context_assign_variable_value(context_t* this, size_t variable_index, bool new_value);
 #endif
