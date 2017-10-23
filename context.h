@@ -31,8 +31,4 @@ int context_eval_clause(context_t* this, clause_t* clause);
 void context_remove_clause_from_unsat(context_t* this, clause_t* clause);
 
 void context_add_clause_to_conflicting(context_t* this, clause_t* clause);
-
-void context_set_all_unsat(context_t* this, arrayList_t* formula);
-
-void context_add_all_to_unsat(void* elem, void* list);
 #endif
