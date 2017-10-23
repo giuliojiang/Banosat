@@ -34,5 +34,5 @@ void variable_destroy(variable_t* variable) {
 }
 
 void variable_set_value(variable_t* variable, bool new_value) {
-    this->current_assignment = new_value ? 1 : -1;
+    variable->currentAssignment = new_value ? 1 : -1;
 }

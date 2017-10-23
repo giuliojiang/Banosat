@@ -5,10 +5,9 @@
 
 context_t* context_create() {
     context_t* ret = malloc(sizeof(context_t));
-    ret->formula = NULL;
-    ret->conflicts = NULL;
-    ret->variables = NULL;
-    ret->conflicting = linkedlist_create();
+    ret->formula = arraylist_create();
+    ret->variables = arraymap_create();
+    ret->conflicts = arraylist_create();
     ret->unsat = linkedlist_create();
     return ret;
 }
@@ -52,7 +51,6 @@ void context_destroy(context_t* this) {
 
 int context_eval_clause(context_t* this, clause_t* clause) {
     arraymap_t* variables = this->variables;
-    bool one_unassigned = false;
     for (size_t i = 0; i < arraylist_size(clause); i++) {
         literal_t literal = *((literal_t*) clause->literals->array[i]);
         variable_t* variable = (variable_t*) arraymap_get(variables, abs(literal));
@@ -70,12 +68,21 @@ int context_eval_clause(context_t* this, clause_t* clause) {
     return -1;
 }
 
+void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
+    linkedlist_remove_node(this->unsat, clause->participating_unsat);
+}
+
+void context_add_clause_to_conflicts(context_t* this, clause_t* clause) {
+    linkedlist_node_t* new_node = linkedlist_add_last(this->conflicts, clause);
+    clause->participating_conflicts = new_node;
+}
+
 void context_assign_variable_value(context_t* this, size_t variable_index, bool new_value) {
-    variable_t* variable = this->variables[variable_index];
+    variable_t* variable = (variable_t*) arraymap_get(this->variables, variable_index);
     variable_set_value(variable, new_value);
     arrayList_t* participatingClauses = variable->participatingClauses;
     for (size_t i = 0; i < arraylist_size(participatingClauses); i++) {
-        clause_t* clause = participatingClauses->literals->array[i];
+        clause_t* clause = arraylist_get(participatingClauses, i);
         int eval = context_eval_clause(this, clause);
         if (eval > 0) {
             context_remove_clause_from_unsat(this, clause);
@@ -85,18 +92,13 @@ void context_assign_variable_value(context_t* this, size_t variable_index, bool 
     }
 }
 
-void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
-    linkedlist_remove_node(this->unsat, clause->participating_unsat);
-}
-
-void context_add_clause_to_conflicts(context_t* this, clause_t* clause) {
-    linkedlist_add_last(this->conflicts, clause);
-}
-
-static void add_all(void* elem, void* list) {
-  linkedlist_add_
+void context_add_all_to_unsat(void* elem, void* list) {
+    linkedlist_t* linked_list = (linkedlist_t*) list;
+    linkedlist_node_t* new_node = linkedlist_add_last(linked_list, elem);
+    clause_t* clause = (clause_t*) elem;
+    clause->participating_unsat = new_node;
 }
 
 void context_set_all_unsat(context_t* this, arrayList_t* formula) {
-    arraylist_foreach(formula, &, this->unsat);
+    arraylist_foreach(formula, &context_add_all_to_unsat, this->unsat);
 }

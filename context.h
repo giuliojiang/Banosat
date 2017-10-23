@@ -3,6 +3,7 @@
 
 #include "clause.h"
 #include "arraymap.h"
+#include "variable.h"
 
 typedef struct context {
     arrayList_t* formula; // ArrayList of clause_t
@@ -32,4 +33,6 @@ void context_remove_clause_from_unsat(context_t* this, clause_t* clause);
 void context_add_clause_to_conflicting(context_t* this, clause_t* clause);
 
 void context_set_all_unsat(context_t* this, arrayList_t* formula);
+
+void context_add_all_to_unsat(void* elem, void* list);
 #endif
