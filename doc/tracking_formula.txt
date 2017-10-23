@@ -50,8 +50,8 @@ Falsity formula example
 
     so go in clause 0 -> (p v q)
     clause 0 {
-        participating_unsat: pointer to the entry in unsat
-        participating_conflicting: pointer to the entry in conflicting
+        participating_unsat: pointer to the entry in unsat : linkedlist_node_t*
+        participating_conflicting: pointer to the entry in conflicting : linkedlist_node_t*
     }
 
     undo assignment q
@@ -65,3 +65,14 @@ Function: is True (formula)
     If conflicting list is not empty -> F
     If unsat list is empty -> T
     Otherwise -> Unknown
+    
+Assign variable
+    
+    void context_assign_variable_values_to_the_argument_of_this_function
+    1 get the variable_t from the map
+    2 assign the value to the variable
+    3 get the participating clauses of the variable
+    4 for each of the participating clauses,
+        if eval(clause) == T     --> remove that clause from context->unsat
+        if eval(clause) == UNDEF --> do nothing
+        if eval(clause) == F     --> add that clause to context->conflicting
