@@ -50,30 +50,45 @@ void context_destroy(context_t* this) {
     free(this);
 }
 
-void context_eval_literals(void* item, void* (aux)) {
-    literal_t literal = *((literal_t*) item);
-    context_t* this = (context_t*) aux;
-    variable_t* variable = (variable_t*) arraymap_get(this->variables, abs(literal));
-    int currAssignment = variable->currentAssignment;
-    if (literal < 0) {
-    
-    }
-}
-
 int context_eval_clause(context_t* this, clause_t* clause) {
     arraymap_t* variables = this->variables;
-    // For a clause, iterate over every literal
-    // for the current variable assignment -> get abs(literal) and fetch the current assignment at that index from the variable map
-    // if literal < 0, invert the assignment
-    // undefined == no truths and at least one unassigned
-    arraylist_foreach(clause->literals, &context_eval_literals, this);
+    bool one_unassigned = false;
+    for (size_t i = 0; i < arraylist_size(clause); i++) {
+      literal_t literal = *((literal_t*) clause->literals->array[i]);
+      variable_t* variable = (variable_t*) arraymap_get(variables, abs(literal));
+      int currAssignment = variable->currentAssignment;
+      if (literal < 0) {
+        currAssignment = -currAssignment;
+      }
+      if (currAssignment > 0) {
+        return 1;
+      }
+      if (currAssignment == 0) {
+        return 0;
+      }
+    }
+    return -1;
 }
-
-// TODO: write eval_clauses
 
 void context_assign_variable_value(context_t* this, size_t variable_index, bool new_value) {
     variable_t* variable = this->variables[variable_index];
     variable_set_value(variable, new_value);
     arrayList_t* participatingClauses = variable->participatingClauses;
-    arraylist_foreach(participatingClauses, &eval_clauses, NULL);
+    for (size_t i = 0; i < arraylist_size(participatingClauses); i++) {
+      clause_t* clause = participatingClauses->literals->array[i];
+      int eval = context_eval_clause(this, clause);
+      if (eval > 0) {
+        context_remove_clause_from_unsat(this, clause);
+      } else if (eval < 0) {
+        context_add_clause_to_conflicting(this, clause);
+      }
+    }
+}
+
+void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
+    linkedlist_remove_node(this->unsat, 
+}
+
+void context_add_clause_to_conflicting(context_t* this, clause_t* clause) {
+
 }

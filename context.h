@@ -25,4 +25,10 @@ void context_print_formula(context_t* this);
 void context_destroy(context_t* this);
 
 void context_assign_variable_value(context_t* this, size_t variable_index, bool new_value);
+
+int context_eval_clause(context_t* this, clause_t* clause);
+
+void context_remove_clause_from_unsat(context_t* this, clause_t* clause);
+
+void context_add_clause_to_conflicting(context_t* this, clause_t* clause);
 #endif

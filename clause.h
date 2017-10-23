@@ -8,7 +8,8 @@
 
 typedef struct clause {
     arrayList_t* literals;
-
+    linked_list_node_t* participating_unsat;
+    linked_list_node_t* participating_conflicting;
 } clause_t;
 
 
