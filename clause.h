@@ -7,7 +7,7 @@
 #include "macros.h"
 
 typedef struct clause {
-    arrayList_t* literals;
+    arrayList_t* literals; // elements are literal_t*
     linkedlist_node_t* participating_unsat;
     linkedlist_node_t* participating_false_clauses;
 } clause_t;

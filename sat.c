@@ -66,8 +66,9 @@ int main(int argc, char **argv) {
     context_t* context = context_create();
     context_set_formula(context, clauses);
     context_set_variables(context, variables);
-    context_print_formula(context);
-
+    
+    context_print_current_state(context);
+    
     printf("UNSAT\n");
     fclose(fp);
     free(line);
