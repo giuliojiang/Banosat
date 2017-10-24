@@ -10,12 +10,17 @@
 #include "arraymap.h"
 #include "clause.h"
 
+#include <stdbool.h>
+
+
 typedef struct variable {
     arrayList_t* participatingClauses; // arraylist of clause_t
+    int currentAssignment;
     // More to come
 } variable_t;
 
 variable_t* variable_create();
 void variable_add_value_into_map(arraymap_t* map, literal_t lit, clause_t* clause);
 void variable_destroy(variable_t* variable);
+void variable_set_value(variable_t* variable, bool new_value);
 #endif //SAT_VARIABLE_H

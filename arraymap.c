@@ -75,3 +75,4 @@ void arraymap_destroy(arraymap_t* this, arraymap_pair_consumer destroyer, void* 
     // Free this
     free(this);
 }
+

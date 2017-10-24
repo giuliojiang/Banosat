@@ -23,6 +23,7 @@ void arraylist_insert(arrayList_t* list, void* value) {
         list->maxLen *= 2;
         list->array = realloc(list->array, list->maxLen * sizeof(void*));
     }
+
     list->array[list->currIndex++] = value;
 }
 

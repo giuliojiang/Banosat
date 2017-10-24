@@ -3,11 +3,14 @@
 
 #include "clause.h"
 #include "arraymap.h"
+#include "variable.h"
 
 typedef struct context {
-    arrayList_t* formula; // ArrayList of clauses
-    arrayList_t* conflicts; // ArrayList of clauses
-    arraymap_t* variables;
+    arrayList_t* formula; // ArrayList of clause_t
+    arrayList_t* conflicts; // ArrayList of clause_t
+    arraymap_t* variables; // Map from unsigned -> variable_t
+    linkedlist_t* unsat; // Unsatisfied clauses (clause_t)
+    linkedlist_t* false_clauses; // List of false clauses in a formula
 } context_t;
 
 context_t* context_create();
@@ -22,4 +25,11 @@ void context_print_formula(context_t* this);
 
 void context_destroy(context_t* this);
 
+void context_assign_variable_value(context_t* this, size_t variable_index, bool new_value);
+
+int context_eval_clause(context_t* this, clause_t* clause);
+
+void context_remove_clause_from_unsat(context_t* this, clause_t* clause);
+
+void context_add_false_clause(context_t* this, clause_t* clause);
 #endif
