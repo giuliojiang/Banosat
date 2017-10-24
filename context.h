@@ -32,4 +32,7 @@ int context_eval_clause(context_t* this, clause_t* clause);
 void context_remove_clause_from_unsat(context_t* this, clause_t* clause);
 
 void context_add_false_clause(context_t* this, clause_t* clause);
+
+void context_print_current_state(context_t* this);
+
 #endif

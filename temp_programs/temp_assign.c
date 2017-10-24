@@ -3,10 +3,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "arraylist.h"
-#include "clause.h"
-#include "context.h"
-#include "variable.h"
+#include "../arraylist.h"
+#include "../clause.h"
+#include "../context.h"
+#include "../variable.h"
 
 clause_t* parseClause(char* line, arraymap_t* variables) {
     char* savePtr;
@@ -30,12 +30,8 @@ clause_t* parseClause(char* line, arraymap_t* variables) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        printf("sat accepts only 1 argument which is the filename of the formula.\n");
-        exit(EXIT_FAILURE);
-    }
 
-    FILE *fp = fopen(argv[1], "r");
+    FILE *fp = fopen("../tests/test4.cnf", "r");
     if(!fp) {
         printf("File %s does not exist", argv[1]);
         exit(EXIT_FAILURE);
@@ -69,6 +65,18 @@ int main(int argc, char **argv) {
     context_set_formula(context, clauses);
     context_set_variables(context, variables);
     
+    context_print_current_state(context);
+    
+    // FORMULA IS 
+    // p cnf 3 4
+    // 1 0
+    // -1 2 3 0
+    // 1 -2 3 0
+    // 1 2 -3 0
+
+    // Try to assign variable 1 = T
+    context_assign_variable_value(context, 1, true);
+    printf("\n\n===AFTER ASSIGNING 1=T ======\n\n");
     context_print_current_state(context);
     
     printf("UNSAT\n");
