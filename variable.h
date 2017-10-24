@@ -10,10 +10,8 @@
 #include "arraymap.h"
 #include "clause.h"
 
-// For laziness of finding the right place to put this
-typedef int bool;
-#define true 1
-#define false 0
+#include <stdbool.h>
+
 
 typedef struct variable {
     arrayList_t* participatingClauses; // arraylist of clause_t
