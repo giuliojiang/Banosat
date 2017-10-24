@@ -13,8 +13,8 @@ clause_t* parseClause(char* line, arraymap_t* variables) {
     char* token = strtok_r(line, " ", &savePtr);
     clause_t* ret = (clause_t*) malloc(sizeof(clause_t));
     ret->literals = arraylist_create();
-    ret->participating_conflicts = NULL;
     ret->participating_unsat = NULL;
+    ret->participating_false_clauses = NULL;
     while(token != NULL) {
         signed lit = atoi(token);
         if(lit == 0) {

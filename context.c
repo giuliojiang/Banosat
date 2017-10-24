@@ -73,11 +73,6 @@ void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
     linkedlist_remove_node(this->unsat, clause->participating_unsat);
 }
 
-void context_add_clause_to_conflicts(context_t* this, clause_t* clause) {
-    linkedlist_node_t* new_node = linkedlist_add_last(this->conflicts, clause);
-    clause->participating_conflicts = new_node;
-}
-
 void context_assign_variable_value(context_t* this, size_t variable_index, bool new_value) {
     variable_t* variable = (variable_t*) arraymap_get(this->variables, variable_index);
     variable_set_value(variable, new_value);
@@ -88,7 +83,12 @@ void context_assign_variable_value(context_t* this, size_t variable_index, bool 
         if (eval > 0) {
             context_remove_clause_from_unsat(this, clause);
         } else if (eval < 0) {
-            context_add_clause_to_conflicts(this, clause);
+            context_add_false_clause(this, clause);
         }
     }
+}
+
+void context_add_false_clause(context_t* this, clause_t* clause) {
+    linkedlist_node_t* false_clause_node = linkedlist_add_last(this->false_clauses, clause);
+    clause->participating_false_clauses = false_clause_node;
 }

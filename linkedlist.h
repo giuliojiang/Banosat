@@ -37,3 +37,4 @@ void linkedlist_foreach(linkedlist_t* this, linkedlist_node_consumer consumer, v
 void linkedlist_destroy(linkedlist_t* this, linkedlist_node_consumer destroy_function, void* aux);
 
 #endif
+

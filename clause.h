@@ -9,7 +9,7 @@
 typedef struct clause {
     arrayList_t* literals;
     linkedlist_node_t* participating_unsat;
-    linkedlist_node_t* participating_conflicts;
+    linkedlist_node_t* participating_false_clauses;
 } clause_t;
 
 

@@ -10,6 +10,7 @@ typedef struct context {
     arrayList_t* conflicts; // ArrayList of clause_t
     arraymap_t* variables; // Map from unsigned -> variable_t
     linkedlist_t* unsat; // Unsatisfied clauses (clause_t)
+    linkedlist_t* false_clauses; // List of false clauses in a formula
 } context_t;
 
 context_t* context_create();
@@ -30,5 +31,5 @@ int context_eval_clause(context_t* this, clause_t* clause);
 
 void context_remove_clause_from_unsat(context_t* this, clause_t* clause);
 
-void context_add_clause_to_conflicting(context_t* this, clause_t* clause);
+void context_add_false_clause(context_t* this, clause_t* clause);
 #endif
