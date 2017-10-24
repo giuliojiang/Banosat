@@ -64,6 +64,8 @@ int main(int argc, char **argv) {
 
     // Create context
     context_t* context = context_create();
+    context_print_current_state(context);
+    
     context_set_formula(context, clauses);
     context_set_variables(context, variables);
     

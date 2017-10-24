@@ -8,7 +8,7 @@
 context_t* context_create() {
     context_t* ret = malloc(sizeof(context_t));
     ret->formula = arraylist_create();
-    ret->variables = arraymap_create();
+    ret->variables = NULL;
     ret->conflicts = arraylist_create();
     ret->unsat = linkedlist_create();
     ret->false_clauses = linkedlist_create();
@@ -137,7 +137,11 @@ void context_print_current_state(context_t* this) {
     // Variables map
     printf("\nVariable map:\n");
     arraymap_t* variables = this->variables;
-    arraymap_foreach_pair(variables, context_print_current_state_variable_printer, NULL);
+    if (!variables) {
+        printf("is NULL\n");
+    } else {
+        arraymap_foreach_pair(variables, context_print_current_state_variable_printer, NULL);
+    }
     // Unsatisfied clauses
     printf("\nUnsat clauses:\n");
     context_print_current_state_print_clause_list(this->unsat);
