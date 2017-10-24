@@ -4,6 +4,7 @@
 #include "stdlib.h"
 #include "variable.h"
 #include "macros.h"
+#include "clause.h"
 
 context_t* context_create() {
     context_t* ret = malloc(sizeof(context_t));
@@ -105,17 +106,19 @@ void context_print_current_state_variable_printer(size_t key, void* value, void*
 
 // clause_list is a linkedlist_t<clause_t*>
 void context_print_current_state_print_clause_list(linkedlist_t* clause_list) {
+    size_t curr_index = 0;
     for (linkedlist_node_t* curr = clause_list->head->next;
          curr != clause_list->tail;
          curr = curr->next) {
         clause_t* elem = (clause_t*) curr->value;
         arrayList_t* clause_literals = elem->literals;
-        printf("Clause: ");
+        printf("Clause %u: ", curr_index);
         for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
             literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
             printf("%d\t", *a_literal);
         }
         printf("\n");
+        curr_index++;
     }
 }
 

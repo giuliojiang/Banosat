@@ -18,4 +18,7 @@ static inline void clause_destroy(void* elem, void* UNUSED(aux)) {
     arraylist_destroy(clause->literals, &arraylist_destroy_free, NULL);
     free(elem);
 }
+
+void clause_print(clause_t* this);
+
 #endif //SAT_CLAUSE_H
