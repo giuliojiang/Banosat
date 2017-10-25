@@ -36,3 +36,7 @@ void variable_destroy(variable_t* variable) {
 void variable_set_value(variable_t* variable, bool new_value) {
     variable->currentAssignment = new_value ? 1 : -1;
 }
+
+void variable_set_raw_value(variable_t* variable, int new_value) {
+    variable->currentAssignment = new_value;
+}

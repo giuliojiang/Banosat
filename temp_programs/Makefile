@@ -1,12 +1,24 @@
 CFLAGS=-I. -Wall -Wextra -Wpedantic -g $(flags)
 
-all: temp_linkedlist temp_arraymap temp_assign
+SAT_OBJECTS = ../linkedlist.o \
+	../arraymap.o \
+	../arraylist.o \
+	../context.o \
+	../variable.o \
+	../clause.o
 
-temp_linkedlist: temp_linkedlist.o ../linkedlist.o
+all: temp_linkedlist \
+	temp_arraymap \
+	temp_assign \
+	temp_unassign
 
-temp_arraymap: temp_arraymap.o ../arraymap.o ../arraylist.o
+temp_linkedlist: temp_linkedlist.o $(SAT_OBJECTS)
 
-temp_assign: temp_assign.o ../arraymap.o ../arraylist.o ../context.o ../linkedlist.o ../variable.o ../clause.o
+temp_arraymap: temp_arraymap.o $(SAT_OBJECTS)
+
+temp_assign: temp_assign.o $(SAT_OBJECTS)
+
+temp_unassign: temp_unassign.o $(SAT_OBJECTS)
 
 clean:
 	rm -rf *.o

@@ -27,11 +27,7 @@ void context_destroy(context_t* this);
 
 void context_assign_variable_value(context_t* this, size_t variable_index, bool new_value);
 
-int context_eval_clause(context_t* this, clause_t* clause);
-
-void context_remove_clause_from_unsat(context_t* this, clause_t* clause);
-
-void context_add_false_clause(context_t* this, clause_t* clause);
+void context_unassign_variable(context_t* this, size_t variable_index);
 
 void context_print_current_state(context_t* this);
 
