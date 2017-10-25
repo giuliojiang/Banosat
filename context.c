@@ -89,6 +89,12 @@ static int context_eval_clause(context_t* this, clause_t* clause) {
 }
 
 static void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
+    fprintf(stderr, "context_remove_clause_from_unsat: removing following clause\n");
+    clause_print(clause);
+    if (!clause->participating_unsat) {
+        fprintf(stderr, "this clause was already removed\n");
+        return;
+    }
     linkedlist_remove_node(this->unsat, clause->participating_unsat);
     clause->participating_unsat = NULL;
 }
@@ -233,6 +239,7 @@ static bool context_run_bcp_once(context_t* this) {
                 new_assignment = false;
             }
             // Make the assignment and update the assignment history
+            fprintf(stderr, "BCP deciding to assign %lu to be %d\n", variable_index, new_assignment);
             context_assign_variable_value(this, variable_index, new_assignment);
             add_deduced_assignment(this, literal_value);
             return true;
@@ -247,6 +254,7 @@ static bool context_run_bcp_once(context_t* this) {
 int context_run_bcp(context_t* this) {
     while (true) {
         int formula_value = context_evaluate_formula(this);
+        fprintf(stderr, "context_run_bcp: Formula is currently true/false? %d\n", formula_value);
         if (formula_value == 0) {
             bool res = context_run_bcp_once(this);
             if (!res) {
@@ -323,7 +331,7 @@ void context_print_current_state(context_t* this) {
 
 // Returns:
 // -1 False
-// 0 Unknown
+//  0 Unknown
 // +1 True
 int context_evaluate_formula(context_t* this) {
     // Check false_clauses list
@@ -340,4 +348,19 @@ int context_evaluate_formula(context_t* this) {
 
     // Otherwise we don't know enough about the formula yet
     return 0;
+}
+
+// context_apply_decision -----------------------------------------------------
+
+// The decision step can make a variable decision assignment.
+// We create a new decision history level and assign the variable to the formula
+
+void context_apply_decision(context_t* this, size_t variable_index, bool new_value) {
+    // Update the assignment history with a new node
+    int assignment_value = new_value ? variable_index : -variable_index;
+    linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
+    assignment_level_t* new_level = assignment_level_create(linkedlist_size(assignment_history), assignment_value);
+    linkedlist_add_last(assignment_history, new_level);
+    // Run context_assign_variable_value
+    context_assign_variable_value(this, variable_index, new_value);
 }

@@ -36,4 +36,6 @@ void context_print_current_state(context_t* this);
 
 int context_evaluate_formula(context_t* this);
 
+void context_apply_decision(context_t* this, size_t variable_index, bool new_value);
+
 #endif
