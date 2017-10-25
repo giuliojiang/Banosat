@@ -24,4 +24,4 @@ temp_unassign: temp_unassign.o $(SAT_OBJECTS)
 clean:
 	rm -rf *.o
 	rm -rf ../*.o
-	rm -rf temp_linkedlist
+	rm -rf temp_linkedlist temp_arraymap temp_assign temp_unassign
