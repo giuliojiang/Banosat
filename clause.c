@@ -7,7 +7,7 @@ void clause_print(clause_t* this) {
     fprintf(stderr, "Clause: ");
     for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
         literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
-        printf("%d\t", *a_literal);
+        fprintf(stderr, "%d\t", *a_literal);
     }
-    printf("\n");
+    fprintf(stderr, "\n");
 }

@@ -6,7 +6,7 @@
 #include "../macros.h"
 
 static void arraymap_print_consumer(size_t key, void* value, void* aux) {
-    printf("[%ld] [%ld] [%ld]\n", (long) key, (long) value, (long) aux);
+    fprintf(stderr, "[%ld] [%ld] [%ld]\n", (long) key, (long) value, (long) aux);
 }
 
 int main(int UNUSED(argc), char** UNUSED(argv)) {

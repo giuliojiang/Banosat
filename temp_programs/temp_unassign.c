@@ -33,7 +33,7 @@ int main(int UNUSED(argc), char **argv) {
 
     FILE *fp = fopen("../tests/test4.cnf", "r");
     if(!fp) {
-        printf("File %s does not exist", argv[1]);
+        fprintf(stderr, "File %s does not exist", argv[1]);
         exit(EXIT_FAILURE);
     }
 
@@ -52,7 +52,7 @@ int main(int UNUSED(argc), char **argv) {
             sscanf(line, "p %s %d %*d", str, &numVariables);
             assert(strncmp(str, "cnf", 4) == 0);
             assert(numVariables >= 0);
-            printf("type: %s, nVariables: %d\n", str, numVariables);
+            fprintf(stderr, "type: %s, nVariables: %d\n", str, numVariables);
         } else {
             arraylist_insert(clauses, parseClause(line, variables));
         }
@@ -76,15 +76,15 @@ int main(int UNUSED(argc), char **argv) {
 
     // Try to assign variable 1 = T
     context_assign_variable_value(context, 1, true);
-    printf("\n\n===AFTER ASSIGNING 1=T ======\n\n");
+    fprintf(stderr, "\n\n===AFTER ASSIGNING 1=T ======\n\n");
     context_print_current_state(context);
     
     // Try to un-assign variable 1
     context_unassign_variable(context, 1);
-    printf("\n\n===AFTER UNASSIGNING 1 ======\n\n");
+    fprintf(stderr, "\n\n===AFTER UNASSIGNING 1 ======\n\n");
     context_print_current_state(context);
     
-    printf("UNSAT\n");
+    fprintf(stderr, "UNSAT\n");
     fclose(fp);
     free(line);
     context_destroy(context);

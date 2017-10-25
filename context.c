@@ -50,9 +50,20 @@ static void context_destroy_variables(size_t UNUSED(key), void* value, void* UNU
     variable_t* var = (variable_t*) value;
     variable_destroy(var);
 }
+
+static void assignment_history_destroyer_func(linkedlist_node_t* node, void* UNUSED(aux)) {
+    assignment_level_t* value = node->value;
+    assignment_level_destroy(value);
+}
+
 void context_destroy(context_t* this) {
     arraylist_destroy(this->formula, &clause_destroy, NULL);
     arraymap_destroy(this->variables, &context_destroy_variables, NULL);
+
+    // Destroy the assignment_history
+    linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
+    linkedlist_destroy(assignment_history, assignment_history_destroyer_func, NULL);
+
     free(this);
 }
 
@@ -254,7 +265,7 @@ int context_run_bcp(context_t* this) {
 
 void context_print_current_state_variable_printer(size_t key, void* value, void* UNUSED(aux)) {
     variable_t* the_variable = (variable_t*) value;
-    printf("\t%lu:\t%d\n", key, the_variable->currentAssignment);
+    fprintf(stderr, "\t%lu:\t%d\n", key, the_variable->currentAssignment);
 }
 
 // clause_list is a linkedlist_t<clause_t*>
@@ -268,44 +279,44 @@ void context_print_current_state_print_clause_list(linkedlist_t* clause_list) {
         fprintf(stderr, "Clause %lu: ", curr_index);
         for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
             literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
-            printf("%d\t", *a_literal);
+            fprintf(stderr, "%d\t", *a_literal);
         }
-        printf("\n");
+        fprintf(stderr, "\n");
         curr_index++;
     }
 }
 
 void context_print_current_state(context_t* this) {
     // Clauses of the formula
-    printf("\nFormula clauses:\n");
+    fprintf(stderr, "\nFormula clauses:\n");
     arrayList_t* formula = this->formula;
     for (size_t i = 0; i < arraylist_size(formula); i++) {
         clause_t* elem = (clause_t*) arraylist_get(formula, i);
         // Print the literals
-        printf("Clause %lu = ", i);
+        fprintf(stderr, "Clause %lu = ", i);
         arrayList_t* clause_literals = elem->literals;
         for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
             literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
-            printf("%d\t", *a_literal);
+            fprintf(stderr, "%d\t", *a_literal);
         }
-        printf("\n");
+        fprintf(stderr, "\n");
     }
     // Variables map
-    printf("\nVariable map:\n");
+    fprintf(stderr, "\nVariable map:\n");
     arraymap_t* variables = this->variables;
     if (!variables) {
-        printf("is NULL\n");
+        fprintf(stderr, "is NULL\n");
     } else {
         arraymap_foreach_pair(variables, context_print_current_state_variable_printer, NULL);
     }
     // Unsatisfied clauses
-    printf("\nUnsat clauses:\n");
+    fprintf(stderr, "\nUnsat clauses:\n");
     context_print_current_state_print_clause_list(this->unsat);
     // False clauses
-    printf("\nFalse clauses:\n");
+    fprintf(stderr, "\nFalse clauses:\n");
     context_print_current_state_print_clause_list(this->false_clauses);
     
-    printf("\n");
+    fprintf(stderr, "\n");
 }
 
 // context_evaluate_formula ---------------------------------------------------
