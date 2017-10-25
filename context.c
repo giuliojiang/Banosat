@@ -137,6 +137,59 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
     }
 }
 
+// context_run_bcp ------------------------------------------------------------
+
+typedef struct unassigned_variables_in_clause {
+    size_t count;       // Number of unassigned literals in a clause
+    literal_t* literal; // The first unassigned literal found
+} unassigned_variables_in_clause_t;
+
+// Counts number of unassigned variables in a clause, and returns the first
+// unassigned variable, if any
+// If there is a false clause in the formula, this function will not be run
+// because BCP is run after the check on the entire formula
+static unassigned_variables_in_clause_t count_unassigned_variables_in_clause(context_t* this, clause_t* the_clause) {
+    // Get variables map
+    arraymap_t* variables = this->variables; // {unsigned -> variable_t*}
+
+    // Initialize counter
+    unassigned_variables_in_clause_t result;
+    result.count = 0;
+    result.literal = NULL;
+
+    // Get the literals
+    arrayList_t* literals = the_clause->literals; // arraylist<literal_t*>
+
+    // Loop through the literals
+    for (int i = 0; i < arraylist_size(literals); i++) {
+        literal_t* a_literal_ptr = (literal_t*) arraylist_get(literals, i);
+
+        // Increment counter if the literal is unassigned in variables map
+        size_t variable_index = abs(*a_literal_ptr);
+
+        // Get the variable data
+        variable_t* variable_data = arraymap_get(variables, variable_index);
+        if (variable_data->currentAssignment == 0) {
+            result.count++;
+            if (!result.literal) {
+                result.literal = a_literal_ptr;
+            }
+        }
+    }
+
+    return result;
+}
+
+static bool context_run_bcp_once
+
+void context_run_bcp(context_t* this) {
+
+    // Get unsatisfied clauses list
+
+    //
+
+}
+
 // context_print_current_state ------------------------------------------------
 
 void context_print_current_state_variable_printer(size_t key, void* value, void* UNUSED(aux)) {
