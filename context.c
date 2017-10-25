@@ -54,7 +54,9 @@ void context_destroy(context_t* this) {
     free(this);
 }
 
-int context_eval_clause(context_t* this, clause_t* clause) {
+// context_assign_variable_value ----------------------------------------------
+
+static int context_eval_clause(context_t* this, clause_t* clause) {
     arraymap_t* variables = this->variables;
     for (size_t i = 0; i < arraylist_size(clause->literals); i++) {
         literal_t literal = *((literal_t*) clause->literals->array[i]);
@@ -73,7 +75,7 @@ int context_eval_clause(context_t* this, clause_t* clause) {
     return -1;
 }
 
-void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
+static void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
     linkedlist_remove_node(this->unsat, clause->participating_unsat);
 }
 
@@ -92,9 +94,43 @@ void context_assign_variable_value(context_t* this, size_t variable_index, bool 
     }
 }
 
-void context_add_false_clause(context_t* this, clause_t* clause) {
+static void context_add_false_clause(context_t* this, clause_t* clause) {
     linkedlist_node_t* false_clause_node = linkedlist_add_last(this->false_clauses, clause);
     clause->participating_false_clauses = false_clause_node;
+}
+
+// context_unassign_variable --------------------------------------------------
+
+void context_unassign_variable(context_t* this, size_t variable_index) {
+    
+    // update assignment value to 0 in the variable map
+    arraymap_t* variables = this->variables; // {unsigned -> variable_t*}
+    variable_t* the_variable = (variable_t*) arraymap_get(variables, variable_index);
+    variable_set_raw_value(the_variable, 0); // 0 is the undefined value
+    
+    // get the participating clauses of the variable
+    arrayList_t* participating_clauses = the_variable->participatingClauses; // arraylist<clause_t*>
+    
+    // for each clause
+    for (int i = 0; i < arraylist_size(participating_clauses); i++) {
+        clause_t* a_clause = arraylist_get(participating_clauses, i);
+        
+        // if participating_false_clauses is not NULL, remove the clause from the false_clauses
+        // because if it's in the false clauses, the clause is currently false, but removing
+        // an assignment will make it undefined
+        linkedlist_node_t* participating_false_clause_node = a_clause->participating_false_clauses;
+        
+        
+        // if participating_unsat is NULL, add this clause to the unsat
+        // because this means the clause was well-defined (either T or F), but now
+        // undoing a variable assignment makes it undefined again
+        
+    }
+    
+
+    
+
+    
 }
 
 // context_print_current_state ------------------------------------------------

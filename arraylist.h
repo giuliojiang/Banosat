@@ -36,4 +36,12 @@ static inline void arraylist_destroy_free(void* item, void* UNUSED(aux)) {
     free(item);
 }
 
+// For loop skeleton ----------------------------------------------------------
+
+/*
+for (int i = 0; i < arraylist_size(the_list); i++) {
+    do()
+}
+*/
+
 #endif //SAT_ARRAYLIST_H
