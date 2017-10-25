@@ -5,7 +5,8 @@ SAT_OBJECTS = ../linkedlist.o \
 	../arraylist.o \
 	../context.o \
 	../variable.o \
-	../clause.o
+	../clause.o \
+	../assignment_level.o
 
 all: temp_linkedlist \
 	temp_arraymap \

@@ -7,6 +7,7 @@
 #include "../clause.h"
 #include "../context.h"
 #include "../variable.h"
+#include "../macros.h"
 
 clause_t* parseClause(char* line, arraymap_t* variables) {
     char* savePtr;
@@ -29,7 +30,7 @@ clause_t* parseClause(char* line, arraymap_t* variables) {
     return ret;
 }
 
-int main(int argc, char **argv) {
+int main(int UNUSED(argc), char** UNUSED(argv)) {
 
     FILE *fp = fopen("../tests/test4.cnf", "r");
     if(!fp) {

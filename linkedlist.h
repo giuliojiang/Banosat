@@ -36,5 +36,15 @@ void linkedlist_foreach(linkedlist_t* this, linkedlist_node_consumer consumer, v
 // The destroy_function is responsible of freeing the pointer stored in the node, but not the node itself
 void linkedlist_destroy(linkedlist_t* this, linkedlist_node_consumer destroy_function, void* aux);
 
+size_t linkedlist_size(linkedlist_t* this);
+
+// For skeleton ---------------------------------------------------------------
+
+/*
+for (linkedlist_node_t* curr = list->head->next; curr != list->tail; curr = curr->next) {
+    do()
+}
+*/
+
 #endif
 

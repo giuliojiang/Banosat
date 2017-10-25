@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static void linkedlist_print_node(linkedlist_node_t* node, void* aux) {
+#include "../macros.h"
+
+static void linkedlist_print_node(linkedlist_node_t* node, void* UNUSED(aux)) {
     printf("%ld\n", (long) node->value);
 }
 
-int main(int argc, char** argv) {
+int main(int UNUSED(argc), char** UNUSED(argv)) {
     // Create a linkedlist
     linkedlist_t* the_list = linkedlist_create();
     // Add a number 1
@@ -16,7 +18,7 @@ int main(int argc, char** argv) {
     printf("List is \n");
     linkedlist_foreach(the_list, &linkedlist_print_node, NULL);
     // Add a number 2
-    linkedlist_node_t* node_2 = linkedlist_add_last(the_list, (void*) 2);
+    linkedlist_add_last(the_list, (void*) 2);
     // Print
     printf("List is \n");
     linkedlist_foreach(the_list, &linkedlist_print_node, NULL);

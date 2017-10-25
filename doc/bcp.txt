@@ -1,7 +1,12 @@
 BCP
 
     Use an assignment history tracker
-    linkedlist<size_t> of variable indexes
+    linkedlist<assignment_level_t*> of variable indexes
+
+    assignment_level_t {
+        int assignment; // abs value is variable index, sign is value
+        linkedlist<int> deduced_assignments; // more assignments deduced by BCP or PLP
+    }
 
     Suppose we start with formula
 

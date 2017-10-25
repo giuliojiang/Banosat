@@ -29,7 +29,7 @@ clause_t* parseClause(char* line, arraymap_t* variables) {
     return ret;
 }
 
-int main(int argc, char **argv) {
+int main(int UNUSED(argc), char **argv) {
 
     FILE *fp = fopen("../tests/test4.cnf", "r");
     if(!fp) {
