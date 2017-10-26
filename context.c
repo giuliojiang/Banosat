@@ -378,6 +378,16 @@ assignment_level_t* context_get_last_assignment_level(context_t* this) {
     return last_assignment_level;
 }
 
+// context_remove_last_assignment_level ---------------------------------------
+
+// Removes the last assignment level
+// Does not free the assignment_level
+assignment_level_t* context_remove_last_assignment_level(context_t* this) {
+    linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
+    assignment_level_t* last_assignment_level = (assignment_level_t*) linkedlist_remove_last(assignment_history);
+    return last_assignment_level;
+}
+
 // context_get_first_variable_index -------------------------------------------
 
 // Returns the first variable index in the mapping
