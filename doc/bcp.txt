@@ -1,0 +1,64 @@
+BCP
+
+    Use an assignment history tracker
+    linkedlist<assignment_level_t*> of variable indexes
+
+    assignment_level_t {
+        int assignment; // abs value is variable index, sign is value
+        linkedlist<int> deduced_assignments; // more assignments deduced by BCP or PLP
+    }
+
+    Suppose we start with formula
+
+    (p v q) (q v z)
+    unsatisfied clauses: 0, 1
+
+    - 1 -
+
+    assign p = F (from decision step)
+
+    (p v q) (q v z)
+     F
+    unsatisfied clauses: 0, 1
+
+    - 2 -
+
+    Check if formula is satisfied or has conflicts
+
+    - 3 -
+
+    Run BCP algorithm.
+
+    Scan through the unsatisfied clauses for clauses with 1 unassigned variable.
+    (future optimization: watch literals)
+
+    Every time we find a clause with 1 unassigned variable, make an assignment
+    if the literal is
+         v  -> T
+        ¬v  -> F
+
+    Loop until BCP cannot find any clauses with 1 unassigned variable anymore
+
+CHOOSING A NEW ASSIGNMENT (DETERMINISTIC WAY)
+
+    Deterministic convention: for each variable, first assign T, then F.
+
+    For the first assignment of the run, choose the first available variable from the variable map.
+
+    Assign it to T.
+
+    Now suppose we backtrack to level N.
+    So all levels >N are un-assigned, and level N is the one we need to re-assign.
+
+    If variable at N was assigned T -> assign F.
+    If N==0 and variable at 0 was assigned F -> formula is UNSAT.
+    If variable at N was assigned F -> backtrack to level N-1.
+
+UNASSIGN AND BACKTRACK
+
+    backtrack_to_level(context, level):
+
+        for i [current_level, level - 1]:
+            unassign_variable_at_level(context, i)
+
+        choose_new_assignment(context, level)

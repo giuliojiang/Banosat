@@ -5,6 +5,7 @@
 #include "variable.h"
 #include "macros.h"
 #include "clause.h"
+#include "assignment_level.h"
 
 context_t* context_create() {
     context_t* ret = malloc(sizeof(context_t));
@@ -13,6 +14,7 @@ context_t* context_create() {
     ret->conflicts = arraylist_create();
     ret->unsat = linkedlist_create();
     ret->false_clauses = linkedlist_create();
+    ret->assignment_history = linkedlist_create();
     return ret;
 }
 
@@ -48,9 +50,20 @@ static void context_destroy_variables(size_t UNUSED(key), void* value, void* UNU
     variable_t* var = (variable_t*) value;
     variable_destroy(var);
 }
+
+static void assignment_history_destroyer_func(linkedlist_node_t* node, void* UNUSED(aux)) {
+    assignment_level_t* value = node->value;
+    assignment_level_destroy(value);
+}
+
 void context_destroy(context_t* this) {
     arraylist_destroy(this->formula, &clause_destroy, NULL);
     arraymap_destroy(this->variables, &context_destroy_variables, NULL);
+
+    // Destroy the assignment_history
+    linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
+    linkedlist_destroy(assignment_history, assignment_history_destroyer_func, NULL);
+
     free(this);
 }
 
@@ -76,6 +89,12 @@ static int context_eval_clause(context_t* this, clause_t* clause) {
 }
 
 static void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
+    fprintf(stderr, "context_remove_clause_from_unsat: removing following clause\n");
+    clause_print(clause);
+    if (!clause->participating_unsat) {
+        fprintf(stderr, "this clause was already removed\n");
+        return;
+    }
     linkedlist_remove_node(this->unsat, clause->participating_unsat);
     clause->participating_unsat = NULL;
 }
@@ -85,6 +104,8 @@ static void context_add_false_clause(context_t* this, clause_t* clause) {
     clause->participating_false_clauses = false_clause_node;
 }
 
+// Assigns a value to a variable
+// Updates the variables map, unsat and false clauses lists and links
 void context_assign_variable_value(context_t* this, size_t variable_index, bool new_value) {
     variable_t* variable = (variable_t*) arraymap_get(this->variables, variable_index);
     variable_set_value(variable, new_value);
@@ -113,7 +134,7 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
     arrayList_t* participating_clauses = the_variable->participatingClauses; // arraylist<clause_t*>
 
     // for each clause
-    for (int i = 0; i < arraylist_size(participating_clauses); i++) {
+    for (size_t i = 0; i < arraylist_size(participating_clauses); i++) {
         clause_t* a_clause = arraylist_get(participating_clauses, i);
 
         // if participating_false_clauses is not NULL, remove the clause from the false_clauses
@@ -137,11 +158,122 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
     }
 }
 
+// context_run_bcp ------------------------------------------------------------
+
+typedef struct unassigned_variables_in_clause {
+    size_t count;       // Number of unassigned literals in a clause
+    literal_t* literal; // The first unassigned literal found
+} unassigned_variables_in_clause_t;
+
+// Counts number of unassigned variables in a clause, and returns the first
+// unassigned variable, if any
+// If there is a false clause in the formula, this function will not be run
+// because BCP is run after the check on the entire formula
+static unassigned_variables_in_clause_t count_unassigned_variables_in_clause(context_t* this, clause_t* the_clause) {
+    // Get variables map
+    arraymap_t* variables = this->variables; // {unsigned -> variable_t*}
+
+    // Initialize counter
+    unassigned_variables_in_clause_t result;
+    result.count = 0;
+    result.literal = NULL;
+
+    // Get the literals
+    arrayList_t* literals = the_clause->literals; // arraylist<literal_t*>
+
+    // Loop through the literals
+    for (size_t i = 0; i < arraylist_size(literals); i++) {
+        literal_t* a_literal_ptr = (literal_t*) arraylist_get(literals, i);
+
+        // Increment counter if the literal is unassigned in variables map
+        size_t variable_index = abs(*a_literal_ptr);
+
+        // Get the variable data
+        variable_t* variable_data = arraymap_get(variables, variable_index);
+        if (variable_data->currentAssignment == 0) {
+            result.count++;
+            if (!result.literal) {
+                result.literal = a_literal_ptr;
+            }
+        }
+    }
+
+    return result;
+}
+
+static void add_deduced_assignment(context_t* this, int new_assignment) {
+    // Get current assignment level
+    linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
+    linkedlist_node_t* last_assignment_node = assignment_history->tail->prev;
+    if (!last_assignment_node || (last_assignment_node == assignment_history->head)) {
+        fprintf(stderr, "add_deduced_assignment: Could not find a valid assignment node to operate on\n");
+        abort();
+    }
+    assignment_level_t* the_assignment_level = (assignment_level_t*) last_assignment_node->value;
+    // Add to the assignment level's deduced assignments
+    assignment_level_add_deduced_assignment(the_assignment_level, new_assignment);
+}
+
+// Returns true if BCP has made some progress
+// Returns false if BCP could not find any singleton-clause to work on
+static bool context_run_bcp_once(context_t* this) {
+    // get unsatisfied clauses
+    linkedlist_t* unsat = this->unsat; // linkedlist<clause_t*>
+
+    // Search for clauses with 1 unassigned variable
+    for (linkedlist_node_t* curr = unsat->head->next; curr != unsat->tail; curr = curr->next) {
+        clause_t* a_clause = (clause_t*) curr->value;
+        unassigned_variables_in_clause_t unassigned_variables = count_unassigned_variables_in_clause(this, a_clause);
+        if (unassigned_variables.count == 1) {
+            // Found a variable on which to do BCP
+            literal_t* literal_ptr = unassigned_variables.literal;
+            literal_t literal_value = *literal_ptr;
+            // Get variable index
+            size_t variable_index = abs(literal_value);
+            bool new_assignment;
+            if (literal_value > 0) {
+                // Assign true
+                new_assignment = true;
+            } else {
+                // Assign false
+                new_assignment = false;
+            }
+            // Make the assignment and update the assignment history
+            fprintf(stderr, "BCP deciding to assign %lu to be %d\n", variable_index, new_assignment);
+            context_assign_variable_value(this, variable_index, new_assignment);
+            add_deduced_assignment(this, literal_value);
+            return true;
+        }
+    }
+
+    // No BCP processed
+    return false;
+}
+
+// Returns an evaluation value of the formula
+int context_run_bcp(context_t* this) {
+    while (true) {
+        int formula_value = context_evaluate_formula(this);
+        fprintf(stderr, "context_run_bcp: Formula is currently true/false? %d\n", formula_value);
+        if (formula_value == 0) {
+            bool res = context_run_bcp_once(this);
+            if (!res) {
+                // BCP did not make any progress, return an evaluation
+                return context_evaluate_formula(this);
+            }
+            // Otherwise, continue looping
+        } else {
+            // We already know if formula is true or false, return
+            return formula_value;
+        }
+    }
+}
+
 // context_print_current_state ------------------------------------------------
 
 void context_print_current_state_variable_printer(size_t key, void* value, void* UNUSED(aux)) {
     variable_t* the_variable = (variable_t*) value;
-    printf("\t%lu:\t%d\n", key, the_variable->currentAssignment);
+    fprintf(stderr, "\t%lu:\t%d\n", key, the_variable->currentAssignment);
 }
 
 // clause_list is a linkedlist_t<clause_t*>
@@ -152,45 +284,83 @@ void context_print_current_state_print_clause_list(linkedlist_t* clause_list) {
          curr = curr->next) {
         clause_t* elem = (clause_t*) curr->value;
         arrayList_t* clause_literals = elem->literals;
-        printf("Clause %u: ", curr_index);
+        fprintf(stderr, "Clause %lu: ", curr_index);
         for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
             literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
-            printf("%d\t", *a_literal);
+            fprintf(stderr, "%d\t", *a_literal);
         }
-        printf("\n");
+        fprintf(stderr, "\n");
         curr_index++;
     }
 }
 
 void context_print_current_state(context_t* this) {
     // Clauses of the formula
-    printf("\nFormula clauses:\n");
+    fprintf(stderr, "\nFormula clauses:\n");
     arrayList_t* formula = this->formula;
     for (size_t i = 0; i < arraylist_size(formula); i++) {
         clause_t* elem = (clause_t*) arraylist_get(formula, i);
         // Print the literals
-        printf("Clause %lu = ", i);
+        fprintf(stderr, "Clause %lu = ", i);
         arrayList_t* clause_literals = elem->literals;
         for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
             literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
-            printf("%d\t", *a_literal);
+            fprintf(stderr, "%d\t", *a_literal);
         }
-        printf("\n");
+        fprintf(stderr, "\n");
     }
     // Variables map
-    printf("\nVariable map:\n");
+    fprintf(stderr, "\nVariable map:\n");
     arraymap_t* variables = this->variables;
     if (!variables) {
-        printf("is NULL\n");
+        fprintf(stderr, "is NULL\n");
     } else {
         arraymap_foreach_pair(variables, context_print_current_state_variable_printer, NULL);
     }
     // Unsatisfied clauses
-    printf("\nUnsat clauses:\n");
+    fprintf(stderr, "\nUnsat clauses:\n");
     context_print_current_state_print_clause_list(this->unsat);
     // False clauses
-    printf("\nFalse clauses:\n");
+    fprintf(stderr, "\nFalse clauses:\n");
     context_print_current_state_print_clause_list(this->false_clauses);
     
-    printf("\n");
+    fprintf(stderr, "\n");
+}
+
+// context_evaluate_formula ---------------------------------------------------
+
+// Returns:
+// -1 False
+//  0 Unknown
+// +1 True
+int context_evaluate_formula(context_t* this) {
+    // Check false_clauses list
+    linkedlist_t* false_clauses = this->false_clauses; // linkedlist<clause_t*>
+    if (linkedlist_size(false_clauses) > 0) {
+        return -1;
+    }
+
+    // Check unsat list
+    linkedlist_t* unsat = this->unsat; // linkedlist<clause_t*>
+    if (linkedlist_size(unsat) == 0) {
+        return 1;
+    }
+
+    // Otherwise we don't know enough about the formula yet
+    return 0;
+}
+
+// context_apply_decision -----------------------------------------------------
+
+// The decision step can make a variable decision assignment.
+// We create a new decision history level and assign the variable to the formula
+
+void context_apply_decision(context_t* this, size_t variable_index, bool new_value) {
+    // Update the assignment history with a new node
+    int assignment_value = new_value ? variable_index : -variable_index;
+    linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
+    assignment_level_t* new_level = assignment_level_create(linkedlist_size(assignment_history), assignment_value);
+    linkedlist_add_last(assignment_history, new_level);
+    // Run context_assign_variable_value
+    context_assign_variable_value(this, variable_index, new_value);
 }

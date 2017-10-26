@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
             sscanf(line, "p %s %d %*d", str, &numVariables);
             assert(strncmp(str, "cnf", 4) == 0);
             assert(numVariables >= 0);
-            printf("type: %s, nVariables: %d\n", str, numVariables);
+            fprintf(stderr, "type: %s, nVariables: %d\n", str, numVariables);
         } else {
             arraylist_insert(clauses, parseClause(line, variables));
         }

@@ -29,11 +29,11 @@ clause_t* parseClause(char* line, arraymap_t* variables) {
     return ret;
 }
 
-int main(int argc, char **argv) {
+int main(int UNUSED(argc), char **argv) {
 
     FILE *fp = fopen("../tests/test4.cnf", "r");
     if(!fp) {
-        printf("File %s does not exist", argv[1]);
+        fprintf(stderr, "File %s does not exist", argv[1]);
         exit(EXIT_FAILURE);
     }
 
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
             sscanf(line, "p %s %d %*d", str, &numVariables);
             assert(strncmp(str, "cnf", 4) == 0);
             assert(numVariables >= 0);
-            printf("type: %s, nVariables: %d\n", str, numVariables);
+            fprintf(stderr, "type: %s, nVariables: %d\n", str, numVariables);
         } else {
             arraylist_insert(clauses, parseClause(line, variables));
         }
@@ -61,12 +61,12 @@ int main(int argc, char **argv) {
     // Create context
     context_t* context = context_create();
     context_print_current_state(context);
-    
+
     context_set_formula(context, clauses);
     context_set_variables(context, variables);
-    
+
     context_print_current_state(context);
-    
+
     // FORMULA IS 
     // p cnf 3 4
     // 1 0
@@ -76,15 +76,25 @@ int main(int argc, char **argv) {
 
     // Try to assign variable 1 = T
     context_assign_variable_value(context, 1, true);
-    printf("\n\n===AFTER ASSIGNING 1=T ======\n\n");
+    fprintf(stderr, "\n\n===AFTER ASSIGNING 1=T ======\n\n");
     context_print_current_state(context);
-    
+
     // Try to un-assign variable 1
     context_unassign_variable(context, 1);
-    printf("\n\n===AFTER UNASSIGNING 1 ======\n\n");
+    fprintf(stderr, "\n\n===AFTER UNASSIGNING 1 ======\n\n");
     context_print_current_state(context);
-    
-    printf("UNSAT\n");
+
+    // Make a decision for 3 = False
+    context_apply_decision(context, 3, false);
+    fprintf(stderr, "\n\n ===== AFTER DECIDING 3 = FALSE ===== \n\n");
+    context_print_current_state(context);
+
+    // Run BCP
+    context_run_bcp(context);
+    fprintf(stderr, "\n\n ==== AFTER RUNNING BCP ==== \n\n");
+    context_print_current_state(context);
+
+    fprintf(stderr, "UNSAT\n");
     fclose(fp);
     free(line);
     context_destroy(context);

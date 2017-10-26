@@ -11,6 +11,7 @@ typedef struct context {
     arraymap_t* variables; // Map from unsigned -> variable_t
     linkedlist_t* unsat; // Unsatisfied clauses (clause_t)
     linkedlist_t* false_clauses; // List of false clauses in a formula
+    linkedlist_t* assignment_history; // linkedlist<assignment_level_t*> Assignment history
 } context_t;
 
 context_t* context_create();
@@ -29,6 +30,12 @@ void context_assign_variable_value(context_t* this, size_t variable_index, bool 
 
 void context_unassign_variable(context_t* this, size_t variable_index);
 
+int context_run_bcp(context_t* this);
+
 void context_print_current_state(context_t* this);
+
+int context_evaluate_formula(context_t* this);
+
+void context_apply_decision(context_t* this, size_t variable_index, bool new_value);
 
 #endif

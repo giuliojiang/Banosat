@@ -106,3 +106,9 @@ void linkedlist_destroy(linkedlist_t* this, linkedlist_node_consumer destroy_fun
     // Free the linkedlist
     free(this);
 }
+
+// Size of linkedlist ---------------------------------------------------------
+
+size_t linkedlist_size(linkedlist_t* this) {
+    return this->size;
+}
