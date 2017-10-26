@@ -350,17 +350,71 @@ int context_evaluate_formula(context_t* this) {
     return 0;
 }
 
-// context_apply_decision -----------------------------------------------------
+// context_apply_new_decision_level -----------------------------------------------------
 
 // The decision step can make a variable decision assignment.
-// We create a new decision history level and assign the variable to the formula
-
-void context_apply_decision(context_t* this, size_t variable_index, bool new_value) {
+// We create a new decision history level
+// Does NOT actually assign the new variable
+void context_apply_new_decision_level(context_t* this, size_t variable_index, bool new_value) {
     // Update the assignment history with a new node
     int assignment_value = new_value ? variable_index : -variable_index;
     linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
     assignment_level_t* new_level = assignment_level_create(linkedlist_size(assignment_history), assignment_value);
     linkedlist_add_last(assignment_history, new_level);
-    // Run context_assign_variable_value
-    context_assign_variable_value(this, variable_index, new_value);
+}
+
+// context_get_last_assignment_level ------------------------------------------
+
+assignment_level_t* context_get_last_assignment_level(context_t* this) {
+    // Get the assignment history
+    linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
+    // Return null if it's empty
+    if (linkedlist_size(assignment_history) == 0) {
+        return NULL;
+    }
+    // Get last element
+    linkedlist_node_t* assignment_history_last_node = assignment_history->tail->prev;
+    assignment_level_t* last_assignment_level = (assignment_level_t*) assignment_history_last_node->value;
+    return last_assignment_level;
+}
+
+// context_remove_last_assignment_level ---------------------------------------
+
+// Removes the last assignment level
+// Does not free the assignment_level
+assignment_level_t* context_remove_last_assignment_level(context_t* this) {
+    linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
+    assignment_level_t* last_assignment_level = (assignment_level_t*) linkedlist_remove_last(assignment_history);
+    return last_assignment_level;
+}
+
+// context_get_first_variable_index -------------------------------------------
+
+// Returns the first variable index in the mapping
+// Returns 0 if variable map contains nothing
+size_t context_get_first_variable_index(context_t* this) {
+    // Get the variables map
+    arraymap_t* variables = this->variables; // arraymap<unsigned, variable_t*>
+    arraymap_pair_t first_variable_data = arraymap_find_first_entry(variables);
+    if (!first_variable_data.v) {
+        // No first element found
+        return 0;
+    } else {
+        // The key of the map is the variable index
+        return first_variable_data.k;
+    }
+}
+
+// context_get_next_variable_index --------------------------------------------
+
+size_t context_get_next_variable_index(context_t* this, size_t previous) {
+    // Get the variables map
+    arraymap_t* variables = this->variables; // arraymap<unsigned, variable_t*>
+    arraymap_pair_t next_variable_data = arraymap_find_next_entry(variables, previous);
+    if (!next_variable_data.v) {
+        // Reached the end of the map
+        return 0;
+    } else {
+        return next_variable_data.k;
+    }
 }

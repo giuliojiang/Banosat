@@ -67,6 +67,15 @@ void* linkedlist_remove_node(linkedlist_t* this, linkedlist_node_t* node) {
     return value;
 }
 
+void* linkedlist_remove_last(linkedlist_t* this) {
+    linkedlist_node_t* last_node = this->tail->prev;
+    if (!last_node || (last_node == this->head)) {
+        return NULL;
+    } else {
+        return linkedlist_remove_node(this, last_node);
+    }
+}
+
 void linkedlist_foreach(linkedlist_t* this, linkedlist_node_consumer consumer, void* aux) {
     linkedlist_node_t* current = this->head->next;
     linkedlist_node_t* next = NULL;

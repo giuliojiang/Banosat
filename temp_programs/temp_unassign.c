@@ -85,7 +85,8 @@ int main(int UNUSED(argc), char **argv) {
     context_print_current_state(context);
 
     // Make a decision for 3 = False
-    context_apply_decision(context, 3, false);
+    context_apply_new_decision_level(context, 3, false);
+    context_assign_variable_value(context, 3, false);
     fprintf(stderr, "\n\n ===== AFTER DECIDING 3 = FALSE ===== \n\n");
     context_print_current_state(context);
 
