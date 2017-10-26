@@ -407,8 +407,6 @@ size_t context_get_first_variable_index(context_t* this) {
 
 // context_get_next_variable_index --------------------------------------------
 
-// Returns the index of the next variable in the mapping
-// Returns 0 if reaches the end of the map
 size_t context_get_next_variable_index(context_t* this, size_t previous) {
     // Get the variables map
     arraymap_t* variables = this->variables; // arraymap<unsigned, variable_t*>

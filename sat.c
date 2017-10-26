@@ -7,6 +7,7 @@
 #include "clause.h"
 #include "context.h"
 #include "variable.h"
+#include "engine.h"
 
 clause_t* parseClause(char* line, arraymap_t* variables) {
     char* savePtr;
@@ -69,6 +70,8 @@ int main(int argc, char **argv) {
     context_set_formula(context, clauses);
     context_set_variables(context, variables);
     
+    bool satisfiable = engine_run_solver(context);
+    fprintf(stderr, "\nMAIN: Satisfiability is %d\n", satisfiable);
     context_print_current_state(context);
     
     printf("UNSAT\n");
