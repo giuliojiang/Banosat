@@ -350,17 +350,32 @@ int context_evaluate_formula(context_t* this) {
     return 0;
 }
 
-// context_apply_decision -----------------------------------------------------
+// context_apply_new_decision_level -----------------------------------------------------
 
 // The decision step can make a variable decision assignment.
-// We create a new decision history level and assign the variable to the formula
-
-void context_apply_decision(context_t* this, size_t variable_index, bool new_value) {
+// We create a new decision history level
+// Does NOT actually assign the new variable
+void context_apply_new_decision_level(context_t* this, size_t variable_index, bool new_value) {
     // Update the assignment history with a new node
     int assignment_value = new_value ? variable_index : -variable_index;
     linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
     assignment_level_t* new_level = assignment_level_create(linkedlist_size(assignment_history), assignment_value);
     linkedlist_add_last(assignment_history, new_level);
-    // Run context_assign_variable_value
-    context_assign_variable_value(this, variable_index, new_value);
 }
+
+// context_get_last_assignment_level ------------------------------------------
+
+assignment_level_t* context_get_last_assignment_level(context_t* this) {
+    // Get the assignment history
+    linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
+    // Return null if it's empty
+    if (linkedlist_size(assignment_history) == 0) {
+        return NULL;
+    }
+    // Get last element
+    linkedlist_node_t* assignment_history_last_node = assignment_history->tail->prev;
+    assignment_level_t* last_assignment_level = (assignment_level_t*) assignment_history_last_node->value;
+    return last_assignment_level;
+}
+
+// context_get_first_variable_index -------------------------------------------
