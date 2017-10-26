@@ -33,6 +33,12 @@ int decide_make_new_decision(context_t* context) {
 int decide_step_up_decision(context_t* context) {
     // Get last assigned level
     assignment_level_t* last_level = context_get_last_assignment_level(context);
+    if (!last_level) {
+        // First run of decision, get the first variable
+        size_t first_variable_index = context_get_first_variable_index(context);
+        context_apply_new_decision_level(context, first_variable_index, true);
+        return (int) first_variable_index;
+    }
     size_t last_variable_index = abs(last_level->assignment);
     // Get next variable index
     size_t next_variable_index = context_get_next_variable_index(context, last_variable_index);

@@ -74,7 +74,12 @@ int main(int argc, char **argv) {
     fprintf(stderr, "\nMAIN: Satisfiability is %d\n", satisfiable);
     context_print_current_state(context);
     
-    printf("UNSAT\n");
+    if (satisfiable) {
+        printf("SAT\n");
+    } else {
+        printf("UNSAT\n");
+    }
+
     fclose(fp);
     free(line);
     context_destroy(context);
