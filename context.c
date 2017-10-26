@@ -379,3 +379,34 @@ assignment_level_t* context_get_last_assignment_level(context_t* this) {
 }
 
 // context_get_first_variable_index -------------------------------------------
+
+// Returns the first variable index in the mapping
+// Returns 0 if variable map contains nothing
+size_t context_get_first_variable_index(context_t* this) {
+    // Get the variables map
+    arraymap_t* variables = this->variables; // arraymap<unsigned, variable_t*>
+    arraymap_pair_t first_variable_data = arraymap_find_first_entry(variables);
+    if (!first_variable_data.v) {
+        // No first element found
+        return 0;
+    } else {
+        // The key of the map is the variable index
+        return first_variable_data.k;
+    }
+}
+
+// context_get_next_variable_index --------------------------------------------
+
+// Returns the index of the next variable in the mapping
+// Returns 0 if reaches the end of the map
+size_t context_get_next_variable_index(context_t* this, size_t previous) {
+    // Get the variables map
+    arraymap_t* variables = this->variables; // arraymap<unsigned, variable_t*>
+    arraymap_pair_t next_variable_data = arraymap_find_next_entry(variables, previous);
+    if (!next_variable_data.v) {
+        // Reached the end of the map
+        return 0;
+    } else {
+        return next_variable_data.k;
+    }
+}

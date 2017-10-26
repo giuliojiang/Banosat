@@ -10,6 +10,11 @@ typedef struct arraymap {
     arrayList_t* arraylist;
 } arraymap_t;
 
+typedef struct arraymap_pair {
+    size_t k;
+    void* v;
+} arraymap_pair_t;
+
 typedef void (*arraymap_pair_consumer)(size_t key, void* value, void* aux);
 
 // Public methods -------------------------------------------------------------
@@ -23,5 +28,9 @@ void* arraymap_get(arraymap_t* this, size_t key);
 void arraymap_foreach_pair(arraymap_t* this, arraymap_pair_consumer consumer, void* aux);
 
 void arraymap_destroy(arraymap_t* this, arraymap_pair_consumer destroyer, void* aux);
+
+arraymap_pair_t arraymap_find_first_entry(arraymap_t* this);
+
+arraymap_pair_t arraymap_find_next_entry(arraymap_t* this, size_t curr_index);
 
 #endif //SAT_ARRAYMAP_H

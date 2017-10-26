@@ -4,6 +4,7 @@
 #include "clause.h"
 #include "arraymap.h"
 #include "variable.h"
+#include "assignment_level.h"
 
 typedef struct context {
     arrayList_t* formula; // ArrayList of clause_t
@@ -39,5 +40,9 @@ int context_evaluate_formula(context_t* this);
 void context_apply_new_decision_level(context_t* this, size_t variable_index, bool new_value);
 
 assignment_level_t* context_get_last_assignment_level(context_t* this);
+
+size_t context_get_first_variable_index(context_t* this);
+
+size_t context_get_next_variable_index(context_t* this, size_t previous);
 
 #endif

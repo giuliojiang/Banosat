@@ -57,3 +57,30 @@ void arraymap_destroy(arraymap_t* this, arraymap_pair_consumer destroyer, void* 
     free(this);
 }
 
+// First element --------------------------------------------------------------
+
+// Returns the first valid pair in the arraymap
+// Returns an empty pair (with a NULL pointer in return.v) if no first element is found
+arraymap_pair_t arraymap_find_first_entry(arraymap_t* this) {
+    return arraymap_find_next_entry(this, -1);
+}
+
+// Next element ---------------------------------------------------------------
+
+// Returns next valid pair in the arraymap
+// Returns an empty pair (with a NULL pointer in return.v) if no first element is found
+arraymap_pair_t arraymap_find_next_entry(arraymap_t* this, size_t curr_index) {
+    for (size_t i = (curr_index + 1); i < arraylist_size(this->arraylist); i++) {
+        void* value = arraylist_get(this->arraylist, i);
+        if (value) {
+            arraymap_pair_t result;
+            result.k = i;
+            result.v = value;
+            return result;
+        }
+    }
+    arraymap_pair_t empty_result;
+    empty_result.k = 0;
+    empty_result.v = NULL;
+    return empty_result;
+}
