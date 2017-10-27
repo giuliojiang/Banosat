@@ -20,6 +20,8 @@ void variable_add_value_into_map(arraymap_t *map, literal_t lit, clause_t* claus
     size_t absLit = (size_t) abs(lit);
     variable_t* var = arraymap_get(map, absLit);
     if(!var) {
+        // If the arraymap doesn't have an entry yet for this variable
+        // Create it
         var = variable_create();
         arraymap_put(map, absLit, var);
     }

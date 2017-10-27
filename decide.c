@@ -36,12 +36,13 @@ int decide_step_up_decision(context_t* context) {
     if (!last_level) {
         // First run of decision, get the first variable
         size_t first_variable_index = context_get_first_variable_index(context);
+        LOG_DEBUG("\nStep up, first time\n");
         context_apply_new_decision_level(context, first_variable_index, true);
         return (int) first_variable_index;
     }
     size_t last_variable_index = abs(last_level->assignment);
     // Get next variable index
-    size_t next_variable_index = context_get_next_variable_index(context, last_variable_index);
+    size_t next_variable_index = context_get_next_unassigned_variable(context);
     if (next_variable_index == 0) {
         // Reached the end of the tree
         // This is an ill situation because it means that all variables were assigned,
@@ -51,6 +52,7 @@ int decide_step_up_decision(context_t* context) {
         return 0;
     }
     // Create next level
+    LOG_DEBUG("\nStep up from level %d", last_level->level);
     context_apply_new_decision_level(context, next_variable_index, true);
     return (int) next_variable_index;
 }
@@ -61,8 +63,10 @@ void decide_backtrack_one_level(context_t* context) {
     // Get the last assignment level
     assignment_level_t* last_assignment_level = context_remove_last_assignment_level(context);
     if (!last_assignment_level) {
+        LOG_DEBUG("\nBacktrack one level: last level was null");
         return;
     }
+    LOG_DEBUG("\nBacktracking one level at %d", last_assignment_level->level);
     // Undo the derived assignments
     linkedlist_t* deduced_assignments = last_assignment_level->deduced_assignments; // linkedlist<int>
     for (linkedlist_node_t* curr = deduced_assignments->head->next; curr != deduced_assignments->tail; curr = curr->next) {

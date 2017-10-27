@@ -1,5 +1,6 @@
 #ifndef SAT_MACROS_H
 #define SAT_MACROS_H
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
