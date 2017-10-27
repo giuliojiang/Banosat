@@ -18,7 +18,8 @@ typedef struct variable {
     // and become read-only for the rest of the execution
     arrayList_t* participatingClauses; // arraylist of clause_t
     int currentAssignment;
-    // More to come
+    int unsatTrueLiteralCount; // number of occurrences in true literals in unsat clauses
+    int unsatNegatedLiteralCount; // number of occurrences in negated literals in unsat clauses
 } variable_t;
 
 variable_t* variable_create();
@@ -26,4 +27,7 @@ void variable_add_value_into_map(arraymap_t* map, literal_t lit, clause_t* claus
 void variable_destroy(variable_t* variable);
 void variable_set_value(variable_t* variable, bool new_value);
 void variable_set_raw_value(variable_t* variable, int new_value);
+void variable_set_unsat_true_literal_count(variable_t* variable, int new_count);
+void variable_set_unsat_negated_literal_count(variable_t* variable, int new_count);
+int variable_get_purity(variable_t* variable);
 #endif //SAT_VARIABLE_H

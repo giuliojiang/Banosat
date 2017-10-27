@@ -34,6 +34,8 @@ void context_unassign_variable(context_t* this, size_t variable_index);
 
 int context_run_bcp(context_t* this);
 
+int context_run_plp(context_t* this);
+
 void context_print_current_state(context_t* this);
 
 int context_evaluate_formula(context_t* this);

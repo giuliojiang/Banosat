@@ -20,6 +20,11 @@ bool engine_run_solver(context_t* context) {
         // BCP
         LOG_DEBUG("\nengine_run_solver: Running BCP...\n");
         context_run_bcp(context);
+        context_print_current_state(context);
+        // PLP
+        LOG_DEBUG("\nengine_run_solver: Running PLP...\n");
+        context_run_plp(context);
+        context_print_current_state(context);
         // Check state
         int formula_eval = context_evaluate_formula(context);
         if (formula_eval > 0) {
