@@ -1,4 +1,7 @@
-CFLAGS=-I. -Wall -Wextra -Wpedantic $(flags) -g -DDEBUG
+# Testing flags
+# CFLAGS=-I. -Wall -Wextra -Wpedantic $(flags) -g -DDEBUG
+# Production flags
+CFLAGS=-I. -Wall -Wextra -Wpedantic $(flags)
 
 DEPS = $(wildcard *.h)
 SRCS=$(wildcard *.c)

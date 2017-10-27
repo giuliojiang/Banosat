@@ -15,10 +15,14 @@ static inline void LOG_FATAL(const char* fmt, ...) {
   abort();
 }
 
-static const bool enable_debug = true;
+#ifdef DEBUG
+static const bool ENABLE_DEBUG = true;
+#else
+static const bool ENABLE_DEBUG = false;
+#endif
 
 static inline void LOG_DEBUG(const char* fmt, ...) {
-  if (enable_debug) {
+  if (ENABLE_DEBUG) {
     va_list args;
     va_start(args, fmt);
     vfprintf(stderr, fmt, args);
