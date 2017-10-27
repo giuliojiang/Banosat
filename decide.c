@@ -46,7 +46,8 @@ int decide_step_up_decision(context_t* context) {
         // Reached the end of the tree
         // This is an ill situation because it means that all variables were assigned,
         // But formula is still inconclusive
-        fprintf(stderr, "decide_step_up_decision: could not find any more variables to be assigned. However this function should only be called if the formula was inconclusive. How can it be inconclusive if all variables have already been assigned?");
+        // I am aborting here as I feel we should investigate about what happened in this case
+        LOG_FATAL("decide_step_up_decision: could not find any more variables to be assigned. However this function should only be called if the formula was inconclusive. How can it be inconclusive if all variables have already been assigned?");
         return 0;
     }
     // Create next level

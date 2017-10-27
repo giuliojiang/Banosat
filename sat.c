@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
             sscanf(line, "p %s %d %*d", str, &numVariables);
             assert(strncmp(str, "cnf", 4) == 0);
             assert(numVariables >= 0);
-            fprintf(stderr, "type: %s, nVariables: %d\n", str, numVariables);
+            LOG_DEBUG("type: %s, nVariables: %d\n", str, numVariables);
         } else {
             arraylist_insert(clauses, parseClause(line, variables));
         }
@@ -71,11 +71,12 @@ int main(int argc, char **argv) {
     context_set_variables(context, variables);
     
     bool satisfiable = engine_run_solver(context);
-    fprintf(stderr, "\nMAIN: Satisfiability is %d\n", satisfiable);
+    LOG_DEBUG("\nMAIN: Satisfiability is %d\n", satisfiable);
     context_print_current_state(context);
     
     if (satisfiable) {
         printf("SAT\n");
+        context_print_result_variables(context);
     } else {
         printf("UNSAT\n");
     }

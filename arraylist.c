@@ -28,11 +28,13 @@ void arraylist_insert(arrayList_t* list, void* value) {
 }
 
 void arraylist_print_all(arrayList_t* list) {
+#ifdef DEBUG
     for(size_t i = 0; i < list->currIndex; i++) {
         void* ptr = arraylist_get(list, i);
-        fprintf(stderr, "%p -> %d ", ptr, *((literal_t*)ptr));
+        LOG_DEBUG("%p -> %d ", ptr, *((literal_t*)ptr));
     }
-    fprintf(stderr, "\n");
+    LOG_DEBUG("\n");
+#endif
 }
 
 void arraylist_set(arrayList_t* list, size_t index, void* value) {

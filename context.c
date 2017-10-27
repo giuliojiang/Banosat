@@ -89,10 +89,10 @@ static int context_eval_clause(context_t* this, clause_t* clause) {
 }
 
 static void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
-    fprintf(stderr, "context_remove_clause_from_unsat: removing following clause\n");
+    LOG_DEBUG("context_remove_clause_from_unsat: removing following clause\n");
     clause_print(clause);
     if (!clause->participating_unsat) {
-        fprintf(stderr, "this clause was already removed\n");
+        LOG_DEBUG("this clause was already removed\n");
         return;
     }
     linkedlist_remove_node(this->unsat, clause->participating_unsat);
@@ -206,8 +206,7 @@ static void add_deduced_assignment(context_t* this, int new_assignment) {
     linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
     linkedlist_node_t* last_assignment_node = assignment_history->tail->prev;
     if (!last_assignment_node || (last_assignment_node == assignment_history->head)) {
-        fprintf(stderr, "add_deduced_assignment: Could not find a valid assignment node to operate on\n");
-        abort();
+        LOG_FATAL("add_deduced_assignment: Could not find a valid assignment node to operate on\n");
     }
     assignment_level_t* the_assignment_level = (assignment_level_t*) last_assignment_node->value;
     // Add to the assignment level's deduced assignments
@@ -239,7 +238,7 @@ static bool context_run_bcp_once(context_t* this) {
                 new_assignment = false;
             }
             // Make the assignment and update the assignment history
-            fprintf(stderr, "BCP deciding to assign %lu to be %d\n", variable_index, new_assignment);
+            LOG_DEBUG("BCP deciding to assign %lu to be %d\n", variable_index, new_assignment);
             context_assign_variable_value(this, variable_index, new_assignment);
             add_deduced_assignment(this, literal_value);
             return true;
@@ -254,7 +253,7 @@ static bool context_run_bcp_once(context_t* this) {
 int context_run_bcp(context_t* this) {
     while (true) {
         int formula_value = context_evaluate_formula(this);
-        fprintf(stderr, "context_run_bcp: Formula is currently true/false? %d\n", formula_value);
+        LOG_DEBUG("context_run_bcp: Formula is currently true/false? %d\n", formula_value);
         if (formula_value == 0) {
             bool res = context_run_bcp_once(this);
             if (!res) {
@@ -272,59 +271,84 @@ int context_run_bcp(context_t* this) {
 // context_print_current_state ------------------------------------------------
 
 void context_print_current_state_variable_printer(size_t key, void* value, void* UNUSED(aux)) {
+#ifdef DEBUG
     variable_t* the_variable = (variable_t*) value;
-    fprintf(stderr, "\t%lu:\t%d\n", key, the_variable->currentAssignment);
+    LOG_DEBUG("\t%lu:\t%d\n", key, the_variable->currentAssignment);
+#endif
 }
 
 // clause_list is a linkedlist_t<clause_t*>
 void context_print_current_state_print_clause_list(linkedlist_t* clause_list) {
+#ifdef DEBUG
     size_t curr_index = 0;
     for (linkedlist_node_t* curr = clause_list->head->next;
          curr != clause_list->tail;
          curr = curr->next) {
         clause_t* elem = (clause_t*) curr->value;
         arrayList_t* clause_literals = elem->literals;
-        fprintf(stderr, "Clause %lu: ", curr_index);
+        LOG_DEBUG("Clause %lu: ", curr_index);
         for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
             literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
-            fprintf(stderr, "%d\t", *a_literal);
+            LOG_DEBUG("%d\t", *a_literal);
         }
-        fprintf(stderr, "\n");
+        LOG_DEBUG("\n");
         curr_index++;
     }
+#endif
 }
 
 void context_print_current_state(context_t* this) {
+#ifdef DEBUG
     // Clauses of the formula
-    fprintf(stderr, "\nFormula clauses:\n");
+    LOG_DEBUG("\nFormula clauses:\n");
     arrayList_t* formula = this->formula;
     for (size_t i = 0; i < arraylist_size(formula); i++) {
         clause_t* elem = (clause_t*) arraylist_get(formula, i);
         // Print the literals
-        fprintf(stderr, "Clause %lu = ", i);
+        LOG_DEBUG("Clause %lu = ", i);
         arrayList_t* clause_literals = elem->literals;
         for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
             literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
-            fprintf(stderr, "%d\t", *a_literal);
+            LOG_DEBUG("%d\t", *a_literal);
         }
-        fprintf(stderr, "\n");
+        LOG_DEBUG("\n");
     }
     // Variables map
-    fprintf(stderr, "\nVariable map:\n");
+    LOG_DEBUG("\nVariable map:\n");
     arraymap_t* variables = this->variables;
     if (!variables) {
-        fprintf(stderr, "is NULL\n");
+        LOG_DEBUG("is NULL\n");
     } else {
         arraymap_foreach_pair(variables, context_print_current_state_variable_printer, NULL);
     }
     // Unsatisfied clauses
-    fprintf(stderr, "\nUnsat clauses:\n");
+    LOG_DEBUG("\nUnsat clauses:\n");
     context_print_current_state_print_clause_list(this->unsat);
     // False clauses
-    fprintf(stderr, "\nFalse clauses:\n");
+    LOG_DEBUG("\nFalse clauses:\n");
     context_print_current_state_print_clause_list(this->false_clauses);
     
-    fprintf(stderr, "\n");
+    LOG_DEBUG("\n");
+#endif
+}
+
+void context_print_result_variables(const context_t* ctx) {
+    arrayList_t* variableArray = ctx->variables->arraylist;
+    const size_t listSize = arraylist_size(variableArray);
+    for(size_t i = 0; i < listSize; i++) {
+        variable_t* var = (variable_t*) arraylist_get(variableArray, i);
+        if(!var) {
+            continue;
+        }
+        // Since this variable is assigned to 0 we could assign it to either -1 or 1
+        // let's just assign it to 1
+        int assignment = !var->currentAssignment ? 1 : var->currentAssignment;
+        printf("%d", assignment * (int) i);
+        if(i != (listSize - 1)) {
+            printf(" ");
+        }
+    }
+    printf("\n");
 }
 
 // context_evaluate_formula ---------------------------------------------------

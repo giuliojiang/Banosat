@@ -8,18 +8,18 @@ bool engine_run_solver(context_t* context) {
     int decision = 0;
     // Decide
     decision = decide_step_up_decision(context);
-    fprintf(stderr, "\nengine_run_solver: Decision step initial: decided %d\n", decision);
+    LOG_DEBUG("\nengine_run_solver: Decision step initial: decided %d\n", decision);
     context_print_current_state(context);
     while (true) {
         if (decision == 0) {
             return false;
         }
         // Assign to the formula
-        fprintf(stderr, "\nengine_run_solver: Assigning to the formula\n");
+        LOG_DEBUG("\nengine_run_solver: Assigning to the formula\n");
         context_assign_variable_value(context, abs(decision), decision > 0);
         context_print_current_state(context);
         // BCP
-        fprintf(stderr, "\nengine_run_solver: Running BCP...\n");
+        LOG_DEBUG("\nengine_run_solver: Running BCP...\n");
         context_run_bcp(context);
         context_print_current_state(context);
         // Check state
@@ -30,11 +30,11 @@ bool engine_run_solver(context_t* context) {
         } else if (formula_eval < 0) {
             // Formula is false, backtrack
             decision = decide_make_new_decision(context);
-            fprintf(stderr, "\nengine_run_solver: Decision step backtrack: decided %d\n", decision);
+            LOG_DEBUG("\nengine_run_solver: Decision step backtrack: decided %d\n", decision);
         } else {
             // Formula is inconclusive, step up a level
             decision = decide_step_up_decision(context);
-            fprintf(stderr, "\nengine_run_solver: Decision step step up: decided %d\n", decision);
+            LOG_DEBUG("\nengine_run_solver: Decision step step up: decided %d\n", decision);
         }
     }
 }
