@@ -37,6 +37,8 @@ void context_print_current_state(context_t* this);
 
 int context_evaluate_formula(context_t* this);
 
+void context_print_result_variables(const context_t* ctx);
+
 void context_apply_new_decision_level(context_t* this, size_t variable_index, bool new_value);
 
 assignment_level_t* context_get_last_assignment_level(context_t* this);
