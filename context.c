@@ -271,65 +271,65 @@ int context_run_bcp(context_t* this) {
 // context_print_current_state ------------------------------------------------
 
 void context_print_current_state_variable_printer(size_t key, void* value, void* UNUSED(aux)) {
-#ifdef DEBUG
-    variable_t* the_variable = (variable_t*) value;
-    LOG_DEBUG("\t%lu:\t%d\n", key, the_variable->currentAssignment);
-#endif
+    if (ENABLE_DEBUG) {
+        variable_t* the_variable = (variable_t*) value;
+        LOG_DEBUG("\t%lu:\t%d\n", key, the_variable->currentAssignment);
+    }
 }
 
 // clause_list is a linkedlist_t<clause_t*>
 void context_print_current_state_print_clause_list(linkedlist_t* clause_list) {
-#ifdef DEBUG
-    size_t curr_index = 0;
-    for (linkedlist_node_t* curr = clause_list->head->next;
-         curr != clause_list->tail;
-         curr = curr->next) {
-        clause_t* elem = (clause_t*) curr->value;
-        arrayList_t* clause_literals = elem->literals;
-        LOG_DEBUG("Clause %lu: ", curr_index);
-        for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
-            literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
-            LOG_DEBUG("%d\t", *a_literal);
+    if (ENABLE_DEBUG) {
+        size_t curr_index = 0;
+        for (linkedlist_node_t* curr = clause_list->head->next;
+            curr != clause_list->tail;
+            curr = curr->next) {
+            clause_t* elem = (clause_t*) curr->value;
+            arrayList_t* clause_literals = elem->literals;
+            LOG_DEBUG("Clause %lu: ", curr_index);
+            for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
+                literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
+                LOG_DEBUG("%d\t", *a_literal);
+            }
+            LOG_DEBUG("\n");
+            curr_index++;
         }
-        LOG_DEBUG("\n");
-        curr_index++;
     }
-#endif
 }
 
 void context_print_current_state(context_t* this) {
-#ifdef DEBUG
-    // Clauses of the formula
-    LOG_DEBUG("\nFormula clauses:\n");
-    arrayList_t* formula = this->formula;
-    for (size_t i = 0; i < arraylist_size(formula); i++) {
-        clause_t* elem = (clause_t*) arraylist_get(formula, i);
-        // Print the literals
-        LOG_DEBUG("Clause %lu = ", i);
-        arrayList_t* clause_literals = elem->literals;
-        for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
-            literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
-            LOG_DEBUG("%d\t", *a_literal);
+    if (ENABLE_DEBUG) {
+        // Clauses of the formula
+        LOG_DEBUG("\nFormula clauses:\n");
+        arrayList_t* formula = this->formula;
+        for (size_t i = 0; i < arraylist_size(formula); i++) {
+            clause_t* elem = (clause_t*) arraylist_get(formula, i);
+            // Print the literals
+            LOG_DEBUG("Clause %lu = ", i);
+            arrayList_t* clause_literals = elem->literals;
+            for (size_t j = 0; j < arraylist_size(clause_literals); j++) {
+                literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, j);
+                LOG_DEBUG("%d\t", *a_literal);
+            }
+            LOG_DEBUG("\n");
         }
+        // Variables map
+        LOG_DEBUG("\nVariable map:\n");
+        arraymap_t* variables = this->variables;
+        if (!variables) {
+            LOG_DEBUG("is NULL\n");
+        } else {
+            arraymap_foreach_pair(variables, context_print_current_state_variable_printer, NULL);
+        }
+        // Unsatisfied clauses
+        LOG_DEBUG("\nUnsat clauses:\n");
+        context_print_current_state_print_clause_list(this->unsat);
+        // False clauses
+        LOG_DEBUG("\nFalse clauses:\n");
+        context_print_current_state_print_clause_list(this->false_clauses);
+
         LOG_DEBUG("\n");
     }
-    // Variables map
-    LOG_DEBUG("\nVariable map:\n");
-    arraymap_t* variables = this->variables;
-    if (!variables) {
-        LOG_DEBUG("is NULL\n");
-    } else {
-        arraymap_foreach_pair(variables, context_print_current_state_variable_printer, NULL);
-    }
-    // Unsatisfied clauses
-    LOG_DEBUG("\nUnsat clauses:\n");
-    context_print_current_state_print_clause_list(this->unsat);
-    // False clauses
-    LOG_DEBUG("\nFalse clauses:\n");
-    context_print_current_state_print_clause_list(this->false_clauses);
-    
-    LOG_DEBUG("\n");
-#endif
 }
 
 void context_print_result_variables(const context_t* ctx) {
