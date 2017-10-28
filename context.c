@@ -71,21 +71,32 @@ void context_destroy(context_t* this) {
 
 static int context_eval_clause(context_t* this, clause_t* clause) {
     arraymap_t* variables = this->variables;
+    int unassigned_literals = 0;
     for (size_t i = 0; i < arraylist_size(clause->literals); i++) {
         literal_t literal = *((literal_t*) clause->literals->array[i]);
         variable_t* variable = (variable_t*) arraymap_get(variables, abs(literal));
         int currAssignment = variable->currentAssignment;
-        if (literal < 0) {
-            currAssignment = -currAssignment;
-        }
-        if (currAssignment > 0) {
+        int literal_eval = literal * currAssignment;
+        if (literal_eval < 0) {
+            // Got a false literal
+            // do nothing
+        } else if (literal_eval == 0) {
+            // Got an unassigned literal
+            // Increment number of unassigned literals in this clause
+            unassigned_literals++;
+        } else {
+            // Got a positive literal
+            // The clause is true immediately
             return 1;
         }
-        if (currAssignment == 0) {
-            return 0;
-        }
     }
-    return -1;
+    if (unassigned_literals > 0) {
+        // There were no positive literals, but some of them don't have an assignment
+        return 0;
+    } else {
+        // Everything in this clause has an assignment, but there were no positive literals
+        return -1;
+    }
 }
 
 static void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
@@ -100,7 +111,12 @@ static void context_remove_clause_from_unsat(context_t* this, clause_t* clause) 
 }
 
 static void context_add_false_clause(context_t* this, clause_t* clause) {
+    LOG_DEBUG("\nAdding false clause:\n");
+    clause_print(clause);
     linkedlist_node_t* false_clause_node = linkedlist_add_last(this->false_clauses, clause);
+    if (clause->participating_false_clauses) {
+        LOG_FATAL("This clause already participates in false\n");
+    }
     clause->participating_false_clauses = false_clause_node;
 }
 
@@ -116,6 +132,7 @@ void context_assign_variable_value(context_t* this, size_t variable_index, bool 
         if (eval > 0) {
             context_remove_clause_from_unsat(this, clause);
         } else if (eval < 0) {
+            context_remove_clause_from_unsat(this, clause);
             context_add_false_clause(this, clause);
         }
     }
@@ -142,6 +159,8 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
         // an assignment will make it undefined
         linkedlist_node_t* participating_false_clause_node = a_clause->participating_false_clauses;
         if (participating_false_clause_node) {
+            LOG_DEBUG("\nRemoving false clause:\n");
+            clause_print(participating_false_clause_node->value);
             linkedlist_remove_node(this->false_clauses, participating_false_clause_node);
             a_clause->participating_false_clauses = NULL;
         }
@@ -150,7 +169,7 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
         // because this means the clause was well-defined (either T or F), but now
         // undoing a variable assignment makes it undefined again
         linkedlist_node_t* participating_unsat = a_clause->participating_unsat;
-        if (!participating_unsat) {
+        if (!participating_unsat && (context_eval_clause(this, a_clause) == 0)) {
             linkedlist_t* unsat_list = this->unsat;
             linkedlist_node_t* newly_added_node = linkedlist_add_last(unsat_list, a_clause);
             a_clause->participating_unsat = newly_added_node;
@@ -222,6 +241,13 @@ static bool context_run_bcp_once(context_t* this) {
     // Search for clauses with 1 unassigned variable
     for (linkedlist_node_t* curr = unsat->head->next; curr != unsat->tail; curr = curr->next) {
         clause_t* a_clause = (clause_t*) curr->value;
+        int clause_eval = context_eval_clause(this, a_clause);
+        if (clause_eval != 0) {
+            LOG_DEBUG("context_run_bcp_once: this clause evaluates to %d\n", clause_eval);
+            LOG_DEBUG("But it is in the unsat list!!!\n");
+            clause_print(a_clause);
+            abort();
+        }
         unassigned_variables_in_clause_t unassigned_variables = count_unassigned_variables_in_clause(this, a_clause);
         if (unassigned_variables.count == 1) {
             // Found a variable on which to do BCP
@@ -431,14 +457,27 @@ size_t context_get_first_variable_index(context_t* this) {
 
 // context_get_next_variable_index --------------------------------------------
 
-size_t context_get_next_variable_index(context_t* this, size_t previous) {
+static size_t context_get_next_variable_index(context_t* this, size_t previous) {
     // Get the variables map
     arraymap_t* variables = this->variables; // arraymap<unsigned, variable_t*>
-    arraymap_pair_t next_variable_data = arraymap_find_next_entry(variables, previous);
-    if (!next_variable_data.v) {
-        // Reached the end of the map
-        return 0;
-    } else {
-        return next_variable_data.k;
+    while (true) {
+        arraymap_pair_t next_variable_data = arraymap_find_next_entry(variables, previous);
+        if (!next_variable_data.v) {
+            // Reached the end of the map
+            return 0;
+        }
+        size_t next_index = next_variable_data.k;
+        variable_t* next_struct = (void*) next_variable_data.v;
+        if (next_struct->currentAssignment == 0) {
+            // If the variable is unassigned, return it
+            return next_index;
+        } else {
+            // If the variable has an assigned value, skip it
+            previous = next_index;
+        }
     }
+}
+
+size_t context_get_next_unassigned_variable(context_t* this) {
+    return context_get_next_variable_index(this, -1);
 }

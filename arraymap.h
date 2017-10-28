@@ -33,4 +33,15 @@ arraymap_pair_t arraymap_find_first_entry(arraymap_t* this);
 
 arraymap_pair_t arraymap_find_next_entry(arraymap_t* this, size_t curr_index);
 
+// For loop skeleton ----------------------------------------------------------
+
+/*
+for (size_t i = 0; i < arraylist_size(ARRAYMAP->arraylist); i++) {
+    void* value = arraylist_get(ARRAYMAP->arraylist, i);
+    if (value) {
+        do(value);
+    }
+}
+*/
+
 #endif //SAT_ARRAYMAP_H

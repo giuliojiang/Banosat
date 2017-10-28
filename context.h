@@ -47,8 +47,8 @@ assignment_level_t* context_remove_last_assignment_level(context_t* this);
 
 size_t context_get_first_variable_index(context_t* this);
 
-// Returns the index of the next variable in the mapping
+// Returns the index of the next unassigned variable in the mapping
 // Returns 0 if reaches the end of the map
-size_t context_get_next_variable_index(context_t* this, size_t previous);
+size_t context_get_next_unassigned_variable(context_t* this);
 
 #endif

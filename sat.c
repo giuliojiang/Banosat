@@ -8,27 +8,7 @@
 #include "context.h"
 #include "variable.h"
 #include "engine.h"
-
-clause_t* parseClause(char* line, arraymap_t* variables) {
-    char* savePtr;
-    char* token = strtok_r(line, " ", &savePtr);
-    clause_t* ret = (clause_t*) malloc(sizeof(clause_t));
-    ret->literals = arraylist_create();
-    ret->participating_unsat = NULL;
-    ret->participating_false_clauses = NULL;
-    while(token != NULL) {
-        signed lit = atoi(token);
-        if(lit == 0) {
-            return ret;
-        }
-        literal_t * litPtr = malloc(sizeof(literal_t));
-        *litPtr = lit;
-        arraylist_insert(ret->literals, (void*)litPtr);
-        variable_add_value_into_map(variables, lit, ret);
-        token = strtok_r(NULL, " ", &savePtr);
-    }
-    return ret;
-}
+#include "parser.h"
 
 int main(int argc, char **argv) {
     if (argc != 2) {
@@ -59,20 +39,22 @@ int main(int argc, char **argv) {
             assert(numVariables >= 0);
             LOG_DEBUG("type: %s, nVariables: %d\n", str, numVariables);
         } else {
-            arraylist_insert(clauses, parseClause(line, variables));
+            clause_t* parsed_clause = parser_parse_clause(line, variables);
+            if (parsed_clause) {
+                arraylist_insert(clauses, parsed_clause);
+            }
         }
     }
 
     // Create context
     context_t* context = context_create();
-    context_print_current_state(context);
-    
     context_set_formula(context, clauses);
     context_set_variables(context, variables);
+    context_print_current_state(context);
     
     bool satisfiable = engine_run_solver(context);
-    LOG_DEBUG("\nMAIN: Satisfiability is %d\n", satisfiable);
     context_print_current_state(context);
+    LOG_DEBUG("\nMAIN: Satisfiability is %d\n", satisfiable);
     
     if (satisfiable) {
         printf("SAT\n");

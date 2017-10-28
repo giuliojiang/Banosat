@@ -6,12 +6,15 @@ SAT_OBJECTS = ../linkedlist.o \
 	../context.o \
 	../variable.o \
 	../clause.o \
-	../assignment_level.o
+	../assignment_level.o \
+	../hashset.o \
+	../parser.o
 
 all: temp_linkedlist \
 	temp_arraymap \
 	temp_assign \
-	temp_unassign
+	temp_unassign \
+	temp_hashset
 
 temp_linkedlist: temp_linkedlist.o $(SAT_OBJECTS)
 
@@ -20,6 +23,8 @@ temp_arraymap: temp_arraymap.o $(SAT_OBJECTS)
 temp_assign: temp_assign.o $(SAT_OBJECTS)
 
 temp_unassign: temp_unassign.o $(SAT_OBJECTS)
+
+temp_hashset: temp_hashset.o $(SAT_OBJECTS)
 
 clean:
 	rm -rf *.o
