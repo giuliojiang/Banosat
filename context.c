@@ -9,7 +9,7 @@
 
 context_t* context_create() {
     context_t* ret = malloc(sizeof(context_t));
-    ret->formula = arraylist_create();
+    ret->formula = NULL;
     ret->variables = NULL;
     ret->conflicts = arraylist_create();
     ret->unsat = linkedlist_create();
