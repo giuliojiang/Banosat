@@ -16,7 +16,7 @@ typedef struct clause {
 static inline void clause_destroy(void* elem, void* UNUSED(aux)) {
     clause_t* clause = (clause_t*) elem;
     arraylist_destroy(clause->literals, &arraylist_destroy_free, NULL);
-    free(elem);
+    free(clause);
 }
 
 void clause_print(clause_t* this);
