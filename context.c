@@ -9,7 +9,7 @@
 
 context_t* context_create() {
     context_t* ret = malloc(sizeof(context_t));
-    ret->formula = arraylist_create();
+    ret->formula = NULL;
     ret->variables = NULL;
     ret->conflicts = arraylist_create();
     ret->unsat = linkedlist_create();
@@ -57,13 +57,15 @@ static void assignment_history_destroyer_func(linkedlist_node_t* node, void* UNU
 }
 
 void context_destroy(context_t* this) {
-    arraylist_destroy(this->formula, &clause_destroy, NULL);
     arraymap_destroy(this->variables, &context_destroy_variables, NULL);
+    arraylist_destroy(this->formula, &clause_destroy, NULL);
 
     // Destroy the assignment_history
     linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
     linkedlist_destroy(assignment_history, assignment_history_destroyer_func, NULL);
-
+    linkedlist_destroy(this->false_clauses, NULL, NULL);
+    linkedlist_destroy(this->unsat, NULL, NULL);
+    arraylist_destroy(this->conflicts, &arraylist_destroy_free, NULL);
     free(this);
 }
 

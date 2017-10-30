@@ -13,6 +13,7 @@ arrayList_t* arraylist_create() {
     arrayList_t* ret = malloc(sizeof(arrayList_t));
     assert(ret);
     ret->array = calloc(BASE_MAX_LEN, sizeof(void*));
+    assert(ret->array);
     ret->currIndex = 0;
     ret->maxLen = BASE_MAX_LEN;
     return ret;
