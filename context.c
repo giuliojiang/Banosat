@@ -72,6 +72,7 @@ void context_destroy(context_t* this) {
     linkedlist_destroy(this->false_clauses, NULL, NULL);
     linkedlist_destroy(this->unsat, NULL, NULL);
     arraylist_destroy(this->conflicts, &arraylist_destroy_free, NULL);
+    free(this->sorted_indices);
     free(this);
 }
 
@@ -362,6 +363,10 @@ void context_print_current_state(context_t* this) {
         LOG_DEBUG("\nFalse clauses:\n");
         context_print_current_state_print_clause_list(this->false_clauses);
 
+        LOG_DEBUG("\nSorted indices:\n");
+        for(size_t i = 0; i < arraylist_size(this->variables->arraylist) - 1; i++) {
+            LOG_DEBUG("Elem %ld -> literal %ld\n", i, this->sorted_indices[i]);
+        }
         LOG_DEBUG("\n");
     }
 }
@@ -501,8 +506,7 @@ static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variabl
     size_t n1 = m - l + 1;
     size_t n2 =  r - m;
 
-    size_t L[n1], R[n2]; // TEMP
-
+    size_t L[n1], R[n2];// = malloc(sizeof(size_t)*n2); // TEMP
     /* Copy data to temp arrays L[] and R[] */
     for (i = 0; i < n1; i++)
         L[i] = arr[l + i];
@@ -516,9 +520,11 @@ static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variabl
     {
         const variable_t* variable1 = arraymap_get(variables, i+1);
         const variable_t* variable2 = arraymap_get(variables, j+1);
-        const size_t length1 = arraylist_size(variable1->participatingClauses);
-        const size_t length2 = arraylist_size(variable2->participatingClauses);
-        if (length1 <= length2)
+        size_t length1 = 0;
+        if(variable1->participatingClauses) length1 = arraylist_size(variable1->participatingClauses);
+        size_t length2 = 0;
+        if(variable2->participatingClauses) length2 = arraylist_size(variable2->participatingClauses);
+        if (length1 >= length2)
         {
             arr[k] = L[i];
             i++;
