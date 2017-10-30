@@ -68,3 +68,4 @@ void arraylist_foreach(arrayList_t* list, voidp_consumer function, void* aux) {
         function(list->array[i], aux);
     }
 }
+

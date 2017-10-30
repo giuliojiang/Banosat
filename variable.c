@@ -42,3 +42,19 @@ void variable_set_value(variable_t* variable, bool new_value) {
 void variable_set_raw_value(variable_t* variable, int new_value) {
     variable->currentAssignment = new_value;
 }
+
+int variable_sorter(const void* elem1, const void* elem2) {
+    const variable_t* variable1 = elem1;
+    const variable_t* variable2 = elem2;
+    LOG_DEBUG("Variable 1: %p %p\n", variable1, variable1->participatingClauses);
+    LOG_DEBUG("Variable 2: %p %p\n", variable2, variable2->participatingClauses);
+    if(!variable1->participatingClauses) {
+        return -1; // TODO: not sure what to do with this
+    }
+    if(!variable2->participatingClauses) {
+        return 1; // TODO: Same as above
+    }
+    size_t size1 = arraylist_size(variable1->participatingClauses);
+    size_t size2 = arraylist_size(variable2->participatingClauses);
+    return (int)size1 - (int)size2;
+}

@@ -26,4 +26,5 @@ void variable_add_value_into_map(arraymap_t* map, literal_t lit, clause_t* claus
 void variable_destroy(variable_t* variable);
 void variable_set_value(variable_t* variable, bool new_value);
 void variable_set_raw_value(variable_t* variable, int new_value);
+int variable_sorter(const void* elem1, const void* elem2);
 #endif //SAT_VARIABLE_H

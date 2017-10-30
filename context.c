@@ -32,6 +32,7 @@ void context_set_formula(context_t* this, arrayList_t* formula) {
 }
 
 void context_set_variables(context_t* this, arraymap_t* variables) {
+    arraymap_sort(variables, &variable_sorter);
     this->variables = variables;
 }
 void context_add_conflict_clause(context_t* this, clause_t* clause) {
@@ -483,3 +484,4 @@ static size_t context_get_next_variable_index(context_t* this, size_t previous) 
 size_t context_get_next_unassigned_variable(context_t* this) {
     return context_get_next_variable_index(this, -1);
 }
+
