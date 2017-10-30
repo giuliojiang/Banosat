@@ -7,6 +7,9 @@
 #include "clause.h"
 #include "assignment_level.h"
 
+
+void mergeSort(size_t *arr, size_t l, size_t r, arraymap_t* variables);
+
 context_t* context_create() {
     context_t* ret = malloc(sizeof(context_t));
     ret->formula = NULL;
@@ -15,6 +18,7 @@ context_t* context_create() {
     ret->unsat = linkedlist_create();
     ret->false_clauses = linkedlist_create();
     ret->assignment_history = linkedlist_create();
+    ret->sorted_indices = NULL;
     return ret;
 }
 
@@ -31,10 +35,11 @@ void context_set_formula(context_t* this, arrayList_t* formula) {
     arraylist_foreach(formula, &context_set_formula_lambda, this->unsat);
 }
 
-void context_set_variables(context_t* this, arraymap_t* variables) {
-    arraymap_sort(variables, &variable_sorter);
+void context_set_variables(context_t* this, arraymap_t* variables, size_t numVariables) {
     this->variables = variables;
+    mergeSort(this->sorted_indices, 0, numVariables, variables);
 }
+
 void context_add_conflict_clause(context_t* this, clause_t* clause) {
     arraylist_insert(this->conflicts, (void*) clause);
 }
@@ -485,3 +490,74 @@ size_t context_get_next_unassigned_variable(context_t* this) {
     return context_get_next_variable_index(this, -1);
 }
 
+void context_set_sorted_indices(context_t* this, size_t* sorted) {
+    this->sorted_indices = sorted;
+}
+
+
+static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variables)
+{
+    size_t i, j, k;
+    size_t n1 = m - l + 1;
+    size_t n2 =  r - m;
+
+    size_t L[n1], R[n2]; // TEMP
+
+    /* Copy data to temp arrays L[] and R[] */
+    for (i = 0; i < n1; i++)
+        L[i] = arr[l + i];
+    for (j = 0; j < n2; j++)
+        R[j] = arr[m + 1+ j];
+
+    i = 0;
+    j = 0;
+    k = l;
+    while (i < n1 && j < n2)
+    {
+        const variable_t* variable1 = arraymap_get(variables, i+1);
+        const variable_t* variable2 = arraymap_get(variables, j+1);
+        const size_t length1 = arraylist_size(variable1->participatingClauses);
+        const size_t length2 = arraylist_size(variable2->participatingClauses);
+        if (length1 <= length2)
+        {
+            arr[k] = L[i];
+            i++;
+        }
+        else
+        {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+
+    /* Copy the remaining elements of L[], if there
+       are any */
+    while (i < n1)
+    {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+
+    // Same for R
+    while (j < n2)
+    {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+}
+
+void mergeSort(size_t *arr, size_t l, size_t r, arraymap_t* variables)
+{
+    if (l < r)
+    {
+        size_t m = l+(r-l)/2;
+
+        mergeSort(arr, l, m, variables);
+        mergeSort(arr, m+1, r, variables);
+
+        merge(arr, l, m, r, variables);
+    }
+}

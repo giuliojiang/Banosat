@@ -33,7 +33,6 @@ arraymap_pair_t arraymap_find_first_entry(arraymap_t* this);
 
 arraymap_pair_t arraymap_find_next_entry(arraymap_t* this, size_t curr_index);
 
-void arraymap_sort(arraymap_t* this, sorter sorter);
 // For loop skeleton ----------------------------------------------------------
 
 /*

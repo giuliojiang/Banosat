@@ -4,6 +4,5 @@
 #include "linkedlist.h"
 
 typedef void (*voidp_consumer)(void*, void* aux);
-typedef int (*sorter)(const void*, const void*);
 #endif
 

@@ -65,14 +65,6 @@ arraymap_pair_t arraymap_find_first_entry(arraymap_t* this) {
     return arraymap_find_next_entry(this, -1);
 }
 
-
-void arraymap_sort(arraymap_t *this, sorter sorter) {
-    LOG_DEBUG("Sorting list: %p", this->arraylist->array);
-    if (arraylist_size(this->arraylist) > 0) {
-        qsort(this->arraylist->array, this->arraylist->currIndex, sizeof(void *), sorter);
-    }
-}
-
 // Next element ---------------------------------------------------------------
 
 // Returns next valid pair in the arraymap

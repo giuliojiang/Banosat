@@ -10,6 +10,15 @@
 #include "engine.h"
 #include "parser.h"
 
+static size_t* make_sorted_variables(int numVar) {
+    size_t* ret = (size_t*) malloc(sizeof(size_t) * numVar);
+    const size_t size = (size_t) numVar;
+    for(size_t i = 0; i < size; i++) {
+        ret[i] = i+1;
+    }
+    return ret;
+}
+
 int main(int argc, char **argv) {
     if (argc != 2) {
         printf("sat accepts only 1 argument which is the filename of the formula.\n");
@@ -48,8 +57,9 @@ int main(int argc, char **argv) {
 
     // Create context
     context_t* context = context_create();
+    context_set_sorted_indices(context, make_sorted_variables(numVariables));
     context_set_formula(context, clauses);
-    context_set_variables(context, variables);
+    context_set_variables(context, variables, numVariables);
     context_print_current_state(context);
     
     bool satisfiable = engine_run_solver(context);
