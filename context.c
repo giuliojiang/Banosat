@@ -37,7 +37,7 @@ void context_set_formula(context_t* this, arrayList_t* formula) {
 
 void context_set_variables(context_t* this, arraymap_t* variables, size_t numVariables) {
     this->variables = variables;
-    mergeSort(this->sorted_indices, 0, numVariables, variables);
+    mergeSort(this->sorted_indices, 0, numVariables -1, variables);
 }
 
 void context_add_conflict_clause(context_t* this, clause_t* clause) {
@@ -506,7 +506,7 @@ static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variabl
     size_t n1 = m - l + 1;
     size_t n2 =  r - m;
 
-    size_t L[n1], R[n2];// = malloc(sizeof(size_t)*n2); // TEMP
+    size_t *L = malloc(n1 * sizeof(size_t)), *R = malloc(sizeof(size_t)*n2); // TEMP
     /* Copy data to temp arrays L[] and R[] */
     for (i = 0; i < n1; i++)
         L[i] = arr[l + i];
@@ -518,20 +518,24 @@ static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variabl
     k = l;
     while (i < n1 && j < n2)
     {
-        const variable_t* variable1 = arraymap_get(variables, i+1);
-        const variable_t* variable2 = arraymap_get(variables, j+1);
+        const arraymap_pair_t v1 = arraymap_find_next_entry(variables, L[i] -1);
+        const arraymap_pair_t v2 = arraymap_find_next_entry(variables, R[j] -1);
         size_t length1 = 0;
-        if(variable1->participatingClauses) length1 = arraylist_size(variable1->participatingClauses);
         size_t length2 = 0;
-        if(variable2->participatingClauses) length2 = arraylist_size(variable2->participatingClauses);
+        if(v1.v) {
+            length1 = arraylist_size(((variable_t*)v1.v)->participatingClauses);
+        }
+        if(v2.v) {
+            length2 = arraylist_size(((variable_t*)v2.v)->participatingClauses);
+        }
         if (length1 >= length2)
         {
-            arr[k] = L[i];
+            arr[k] = v1.k;
             i++;
         }
         else
         {
-            arr[k] = R[j];
+            arr[k] = v2.k;
             j++;
         }
         k++;
@@ -541,7 +545,8 @@ static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variabl
        are any */
     while (i < n1)
     {
-        arr[k] = L[i];
+        const arraymap_pair_t v1 = arraymap_find_next_entry(variables, L[i] -1);
+        arr[k] = v1.k;
         i++;
         k++;
     }
@@ -549,10 +554,13 @@ static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variabl
     // Same for R
     while (j < n2)
     {
-        arr[k] = R[j];
+        const arraymap_pair_t v2 = arraymap_find_next_entry(variables, R[j] - 1);
+        arr[k] = v2.k;
         j++;
         k++;
     }
+    free(L);
+    free(R);
 }
 
 void mergeSort(size_t *arr, size_t l, size_t r, arraymap_t* variables)
