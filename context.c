@@ -35,17 +35,23 @@ void context_set_formula(context_t* this, arrayList_t* formula) {
     arraylist_foreach(formula, &context_set_formula_lambda, this->unsat);
 }
 
-static void buildSortedArrays(size_t key, void* UNUSED(value), void* aux) {
+// Copies all the keys from variable (arraymap<literal, variable_t> into aux
+static void context_populate_sorted_indices(size_t key, void *UNUSED(value), void *aux) {
+    // Local static variable to keep track of the index.
+    // Doing it this way so that I don't need to make a struct to store it in aux.
     static size_t index = 0;
     size_t* aList = aux;
     aList[index++] = key;
 }
+
 void context_set_variables(context_t* this, arraymap_t* variables, size_t numVariables) {
-    size_t* sortedIndex = malloc(sizeof(size_t) * numVariables);
     this->variables = variables;
-    arraymap_foreach_pair(this->variables, &buildSortedArrays, sortedIndex);
-    mergeSort(sortedIndex, 0, numVariables-1, variables);
-    this->sorted_indices = sortedIndex;
+    size_t* sortedIndices = malloc(sizeof(size_t) * numVariables);
+    arraymap_foreach_pair(this->variables, &context_populate_sorted_indices, sortedIndices);
+    // Sorts the array based on the number of clauses in which each variable appears in
+    // Descending order.
+    mergeSort(sortedIndices, 0, numVariables-1, variables);
+    this->sorted_indices = sortedIndices;
 }
 
 void context_add_conflict_clause(context_t* this, clause_t* clause) {
@@ -526,8 +532,11 @@ static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variabl
         // -1 is needed because of find_next_entry finding the next entry and not the closest one
         const arraymap_pair_t v1 = arraymap_find_next_entry(variables, L[i]-1);
         const arraymap_pair_t v2 = arraymap_find_next_entry(variables, R[j]-1);
+        // The unchecked cast is possible because of sorted_indexes being built from variable,
+        // therefore if a literal is there it must exist
         const size_t length1 = arraylist_size(((variable_t*)v1.v)->participatingClauses);
         const size_t length2 = arraylist_size(((variable_t*)v2.v)->participatingClauses);
+        // Descending
         if (length1 >= length2)
         {
             arr[k] = L[i];
