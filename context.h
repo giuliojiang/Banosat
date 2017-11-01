@@ -14,6 +14,7 @@ typedef struct context {
     linkedlist_t* unsat; // linkedlist<clause_t*>: unsatisfied clauses
     linkedlist_t* false_clauses; // linkedlist<clause_t*>: false clauses in the formula
     linkedlist_t* assignment_history; // linkedlist<assignment_level_t*>: assignment history
+    size_t numVariables; // Number of variables
 } context_t;
 
 context_t* context_create();

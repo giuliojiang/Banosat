@@ -40,7 +40,7 @@ int decide_step_up_decision(context_t* context) {
         context_apply_new_decision_level(context, first_variable_index, true);
         return (int) first_variable_index;
     }
-    size_t last_variable_index = abs(last_level->assignment);
+    // size_t last_variable_index = abs(last_level->assignment);
     // Get next variable index
     size_t next_variable_index = context_get_next_unassigned_variable(context);
     if (next_variable_index == 0) {
