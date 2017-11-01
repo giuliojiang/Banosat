@@ -35,9 +35,17 @@ void context_set_formula(context_t* this, arrayList_t* formula) {
     arraylist_foreach(formula, &context_set_formula_lambda, this->unsat);
 }
 
+static void buildSortedArrays(size_t key, void* UNUSED(value), void* aux) {
+    static size_t index = 0;
+    size_t* aList = aux;
+    aList[index++] = key;
+}
 void context_set_variables(context_t* this, arraymap_t* variables, size_t numVariables) {
+    size_t* sortedIndex = malloc(sizeof(size_t) * numVariables);
     this->variables = variables;
-    mergeSort(this->sorted_indices, 0, numVariables -1, variables);
+    arraymap_foreach_pair(this->variables, &buildSortedArrays, sortedIndex);
+    mergeSort(sortedIndex, 0, numVariables-1, variables);
+    this->sorted_indices = sortedIndex;
 }
 
 void context_add_conflict_clause(context_t* this, clause_t* clause) {
@@ -495,47 +503,39 @@ size_t context_get_next_unassigned_variable(context_t* this) {
     return context_get_next_variable_index(this, -1);
 }
 
-void context_set_sorted_indices(context_t* this, size_t* sorted) {
-    this->sorted_indices = sorted;
-}
-
 
 static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variables)
 {
     size_t i, j, k;
-    size_t n1 = m - l + 1;
-    size_t n2 =  r - m;
+    const size_t n1 = m - l + 1; // How big is the left part of the array?
+    const size_t n2 =  r - m; // and the right?
 
     size_t *L = malloc(n1 * sizeof(size_t)), *R = malloc(sizeof(size_t)*n2); // TEMP
+
     /* Copy data to temp arrays L[] and R[] */
     for (i = 0; i < n1; i++)
         L[i] = arr[l + i];
     for (j = 0; j < n2; j++)
-        R[j] = arr[m + 1+ j];
+        R[j] = arr[m + 1 + j];
 
     i = 0;
     j = 0;
     k = l;
     while (i < n1 && j < n2)
     {
-        const arraymap_pair_t v1 = arraymap_find_next_entry(variables, L[i] -1);
-        const arraymap_pair_t v2 = arraymap_find_next_entry(variables, R[j] -1);
-        size_t length1 = 0;
-        size_t length2 = 0;
-        if(v1.v) {
-            length1 = arraylist_size(((variable_t*)v1.v)->participatingClauses);
-        }
-        if(v2.v) {
-            length2 = arraylist_size(((variable_t*)v2.v)->participatingClauses);
-        }
+        // -1 is needed because of find_next_entry finding the next entry and not the closest one
+        const arraymap_pair_t v1 = arraymap_find_next_entry(variables, L[i]-1);
+        const arraymap_pair_t v2 = arraymap_find_next_entry(variables, R[j]-1);
+        const size_t length1 = arraylist_size(((variable_t*)v1.v)->participatingClauses);
+        const size_t length2 = arraylist_size(((variable_t*)v2.v)->participatingClauses);
         if (length1 >= length2)
         {
-            arr[k] = v1.k;
+            arr[k] = L[i];
             i++;
         }
         else
         {
-            arr[k] = v2.k;
+            arr[k] = R[j];
             j++;
         }
         k++;
@@ -545,8 +545,7 @@ static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variabl
        are any */
     while (i < n1)
     {
-        const arraymap_pair_t v1 = arraymap_find_next_entry(variables, L[i] -1);
-        arr[k] = v1.k;
+        arr[k] = L[i];
         i++;
         k++;
     }
@@ -554,8 +553,7 @@ static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variabl
     // Same for R
     while (j < n2)
     {
-        const arraymap_pair_t v2 = arraymap_find_next_entry(variables, R[j] - 1);
-        arr[k] = v2.k;
+        arr[k] = R[j];
         j++;
         k++;
     }
