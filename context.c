@@ -482,14 +482,14 @@ size_t context_get_first_variable_index(context_t* this) {
 static size_t context_find_next_sorted_index(context_t* this) {
     for(size_t i = 0; i < this->numVariables; i++) {
         const size_t key = this->sorted_indices[i];
-        const arraymap_pair_t next_variable_data = arraymap_find_next_entry(this->variables, key - 1);
-        // Ran out of variables
-        if(!next_variable_data.v) {
-            return 0;
+        const variable_t* next_variable_data = (variable_t*) arraymap_get(this->variables, key);
+        // Somehow the key points to an invalid variable (?)
+        if(!next_variable_data) {
+            LOG_FATAL("%s:%lu: key %lu pointed to a NULL variable!\n", __FILE__, __LINE__, key);
+            break;
         }
-        const variable_t* next_struct = (variable_t*) next_variable_data.v;
-        if(!next_struct->currentAssignment) {
-            return next_variable_data.k;
+        if(!next_variable_data->currentAssignment) {
+            return key;
         }
     }
     // Nothing is left to be assigned
