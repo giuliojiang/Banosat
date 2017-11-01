@@ -7,6 +7,9 @@
 #include "clause.h"
 #include "assignment_level.h"
 
+
+void mergeSort(size_t *arr, size_t l, size_t r, arraymap_t* variables);
+
 context_t* context_create() {
     context_t* ret = malloc(sizeof(context_t));
     ret->formula = NULL;
@@ -15,6 +18,7 @@ context_t* context_create() {
     ret->unsat = linkedlist_create();
     ret->false_clauses = linkedlist_create();
     ret->assignment_history = linkedlist_create();
+    ret->sorted_indices = NULL;
     return ret;
 }
 
@@ -31,9 +35,25 @@ void context_set_formula(context_t* this, arrayList_t* formula) {
     arraylist_foreach(formula, &context_set_formula_lambda, this->unsat);
 }
 
-void context_set_variables(context_t* this, arraymap_t* variables) {
-    this->variables = variables;
+// Copies all the keys from variable (arraymap<literal, variable_t> into aux
+static void context_populate_sorted_indices(size_t key, void *UNUSED(value), void *aux) {
+    // Local static variable to keep track of the index.
+    // Doing it this way so that I don't need to make a struct to store it in aux.
+    static size_t index = 0;
+    size_t* aList = aux;
+    aList[index++] = key;
 }
+
+void context_set_variables(context_t* this, arraymap_t* variables, size_t numVariables) {
+    this->variables = variables;
+    size_t* sortedIndices = malloc(sizeof(size_t) * numVariables);
+    arraymap_foreach_pair(this->variables, &context_populate_sorted_indices, sortedIndices);
+    // Sorts the array based on the number of clauses in which each variable appears in
+    // Descending order.
+    mergeSort(sortedIndices, 0, numVariables-1, variables);
+    this->sorted_indices = sortedIndices;
+}
+
 void context_add_conflict_clause(context_t* this, clause_t* clause) {
     arraylist_insert(this->conflicts, (void*) clause);
 }
@@ -66,6 +86,7 @@ void context_destroy(context_t* this) {
     linkedlist_destroy(this->false_clauses, NULL, NULL);
     linkedlist_destroy(this->unsat, NULL, NULL);
     arraylist_destroy(this->conflicts, &arraylist_destroy_free, NULL);
+    free(this->sorted_indices);
     free(this);
 }
 
@@ -356,6 +377,10 @@ void context_print_current_state(context_t* this) {
         LOG_DEBUG("\nFalse clauses:\n");
         context_print_current_state_print_clause_list(this->false_clauses);
 
+        LOG_DEBUG("\nSorted indices:\n");
+        for(size_t i = 0; i < arraylist_size(this->variables->arraylist) - 1; i++) {
+            LOG_DEBUG("Elem %ld -> literal %ld\n", i, this->sorted_indices[i]);
+        }
         LOG_DEBUG("\n");
     }
 }
@@ -482,4 +507,78 @@ static size_t context_get_next_variable_index(context_t* this, size_t previous) 
 
 size_t context_get_next_unassigned_variable(context_t* this) {
     return context_get_next_variable_index(this, -1);
+}
+
+
+static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variables)
+{
+    size_t i, j, k;
+    const size_t n1 = m - l + 1; // How big is the left part of the array?
+    const size_t n2 =  r - m; // and the right?
+
+    size_t *L = malloc(n1 * sizeof(size_t)), *R = malloc(sizeof(size_t)*n2); // TEMP
+
+    /* Copy data to temp arrays L[] and R[] */
+    for (i = 0; i < n1; i++)
+        L[i] = arr[l + i];
+    for (j = 0; j < n2; j++)
+        R[j] = arr[m + 1 + j];
+
+    i = 0;
+    j = 0;
+    k = l;
+    while (i < n1 && j < n2)
+    {
+        // -1 is needed because of find_next_entry finding the next entry and not the closest one
+        const arraymap_pair_t v1 = arraymap_find_next_entry(variables, L[i]-1);
+        const arraymap_pair_t v2 = arraymap_find_next_entry(variables, R[j]-1);
+        // The unchecked cast is possible because of sorted_indexes being built from variable,
+        // therefore if a literal is there it must exist
+        const size_t length1 = arraylist_size(((variable_t*)v1.v)->participatingClauses);
+        const size_t length2 = arraylist_size(((variable_t*)v2.v)->participatingClauses);
+        // Descending
+        if (length1 >= length2)
+        {
+            arr[k] = L[i];
+            i++;
+        }
+        else
+        {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+
+    /* Copy the remaining elements of L[], if there
+       are any */
+    while (i < n1)
+    {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+
+    // Same for R
+    while (j < n2)
+    {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+    free(L);
+    free(R);
+}
+
+void mergeSort(size_t *arr, size_t l, size_t r, arraymap_t* variables)
+{
+    if (l < r)
+    {
+        size_t m = l+(r-l)/2;
+
+        mergeSort(arr, l, m, variables);
+        mergeSort(arr, m+1, r, variables);
+
+        merge(arr, l, m, r, variables);
+    }
 }

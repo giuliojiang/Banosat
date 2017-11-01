@@ -9,6 +9,7 @@
 typedef struct context {
     arrayList_t* formula; // arraylist<clause_t*>
     arrayList_t* conflicts; // arraylist<clause_t*>
+    size_t* sorted_indices;
     arraymap_t* variables; // arraymap<size_t, variable_t*>
     linkedlist_t* unsat; // linkedlist<clause_t*>: unsatisfied clauses
     linkedlist_t* false_clauses; // linkedlist<clause_t*>: false clauses in the formula
@@ -19,7 +20,7 @@ context_t* context_create();
 
 void context_set_formula(context_t* this, arrayList_t* formula);
 
-void context_set_variables(context_t* this, arraymap_t* variables);
+void context_set_variables(context_t* this, arraymap_t* variables, size_t numVariables);
 
 void context_add_conflict_clause(context_t* this, clause_t* clause);
 

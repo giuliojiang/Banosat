@@ -70,6 +70,7 @@ arraymap_pair_t arraymap_find_first_entry(arraymap_t* this) {
 // Returns next valid pair in the arraymap
 // Returns an empty pair (with a NULL pointer in return.v) if no first element is found
 arraymap_pair_t arraymap_find_next_entry(arraymap_t* this, size_t curr_index) {
+    LOG_DEBUG("Finding %lu SIZE = %lu\n", curr_index, arraylist_size(this->arraylist));
     for (size_t i = (curr_index + 1); i < arraylist_size(this->arraylist); i++) {
         void* value = arraylist_get(this->arraylist, i);
         if (value) {
