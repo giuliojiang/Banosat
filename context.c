@@ -19,6 +19,7 @@ context_t* context_create() {
     ret->false_clauses = linkedlist_create();
     ret->assignment_history = linkedlist_create();
     ret->sorted_indices = NULL;
+    ret->numVariables = 0;
     return ret;
 }
 
@@ -46,6 +47,7 @@ static void context_populate_sorted_indices(size_t key, void *UNUSED(value), voi
 
 void context_set_variables(context_t* this, arraymap_t* variables, size_t numVariables) {
     this->variables = variables;
+    this->numVariables = numVariables;
     size_t* sortedIndices = malloc(sizeof(size_t) * numVariables);
     arraymap_foreach_pair(this->variables, &context_populate_sorted_indices, sortedIndices);
     // Sorts the array based on the number of clauses in which each variable appears in
@@ -470,43 +472,32 @@ assignment_level_t* context_remove_last_assignment_level(context_t* this) {
 // Returns the first variable index in the mapping
 // Returns 0 if variable map contains nothing
 size_t context_get_first_variable_index(context_t* this) {
-    // Get the variables map
-    arraymap_t* variables = this->variables; // arraymap<unsigned, variable_t*>
-    arraymap_pair_t first_variable_data = arraymap_find_first_entry(variables);
-    if (!first_variable_data.v) {
-        // No first element found
-        return 0;
-    } else {
-        // The key of the map is the variable index
-        return first_variable_data.k;
-    }
+    // The sorted_indices array is full of 0s if empty, so if there is no first variable, 0 will be returned.
+    return this->sorted_indices[0];
 }
 
 // context_get_next_variable_index --------------------------------------------
-
-static size_t context_get_next_variable_index(context_t* this, size_t previous) {
-    // Get the variables map
-    arraymap_t* variables = this->variables; // arraymap<unsigned, variable_t*>
-    while (true) {
-        arraymap_pair_t next_variable_data = arraymap_find_next_entry(variables, previous);
-        if (!next_variable_data.v) {
-            // Reached the end of the map
-            return 0;
+// Maybe improvement: store the last index and then start from there,
+// if that yields nothing start from 0?
+static size_t context_find_next_sorted_index(context_t* this) {
+    for(size_t i = 0; i < this->numVariables; i++) {
+        const size_t key = this->sorted_indices[i];
+        const variable_t* next_variable_data = (variable_t*) arraymap_get(this->variables, key);
+        // Somehow the key points to an invalid variable (?)
+        if(!next_variable_data) {
+            LOG_FATAL("%s:%lu: key %lu pointed to a NULL variable!\n", __FILE__, __LINE__, key);
+            break;
         }
-        size_t next_index = next_variable_data.k;
-        variable_t* next_struct = (void*) next_variable_data.v;
-        if (next_struct->currentAssignment == 0) {
-            // If the variable is unassigned, return it
-            return next_index;
-        } else {
-            // If the variable has an assigned value, skip it
-            previous = next_index;
+        if(!next_variable_data->currentAssignment) {
+            return key;
         }
     }
+    // Nothing is left to be assigned
+    return 0;
 }
 
 size_t context_get_next_unassigned_variable(context_t* this) {
-    return context_get_next_variable_index(this, -1);
+    return context_find_next_sorted_index(this);
 }
 
 
