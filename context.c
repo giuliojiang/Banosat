@@ -23,17 +23,35 @@ context_t* context_create() {
     return ret;
 }
 
+// Update state for variables within the clause; unsat(True/Negated)LiteralCounts
+// will change for every literal within
+static void context_update_clause_literal_purity_counts(context_t* this, clause_t* clause, int counter) {
+  arrayList_t* literals = clause->literals;
+  for (size_t j = 0; j < arraylist_size(literals); j++) {
+      literal_t* a_literal = (literal_t*) arraylist_get(literals, j);
+      size_t variable_index = abs(*a_literal);
+      variable_t* a_variable = (variable_t*) arraymap_get(this->variables, variable_index);
+      if (*a_literal > 0) {
+          variable_set_unsat_true_literal_count(a_variable, a_variable->unsatTrueLiteralCount + counter);
+      } else if (*a_literal < 0) {
+          variable_set_unsat_negated_literal_count(a_variable, a_variable->unsatNegatedLiteralCount + counter);
+      }
+  }
+}
+
 void context_set_formula_lambda(void* item, void* aux) {
     clause_t* clause = (clause_t*) item;
-    linkedlist_t* unsat = (linkedlist_t*) aux;
+    context_t* this = (context_t*) aux;
+    linkedlist_t* unsat = (linkedlist_t*) this->unsat;
     linkedlist_node_t* new_clause_node = linkedlist_add_last(unsat, clause);
     clause->participating_unsat = new_clause_node;
+    context_update_clause_literal_purity_counts(this, clause, 1);
 }
 
 void context_set_formula(context_t* this, arrayList_t* formula) {
     this->formula = formula;
 
-    arraylist_foreach(formula, &context_set_formula_lambda, this->unsat);
+    arraylist_foreach(formula, &context_set_formula_lambda, this);
 }
 
 // Copies all the keys from variable (arraymap<literal, variable_t> into aux
@@ -131,6 +149,7 @@ static void context_remove_clause_from_unsat(context_t* this, clause_t* clause) 
         LOG_DEBUG("this clause was already removed\n");
         return;
     }
+    context_update_clause_literal_purity_counts(this, clause, -1);
     linkedlist_remove_node(this->unsat, clause->participating_unsat);
     clause->participating_unsat = NULL;
 }
@@ -150,6 +169,7 @@ static void context_add_false_clause(context_t* this, clause_t* clause) {
 void context_assign_variable_value(context_t* this, size_t variable_index, bool new_value) {
     variable_t* variable = (variable_t*) arraymap_get(this->variables, variable_index);
     variable_set_value(variable, new_value);
+
     arrayList_t* participatingClauses = variable->participatingClauses;
     for (size_t i = 0; i < arraylist_size(participatingClauses); i++) {
         clause_t* clause = arraylist_get(participatingClauses, i);
@@ -198,6 +218,8 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
             linkedlist_t* unsat_list = this->unsat;
             linkedlist_node_t* newly_added_node = linkedlist_add_last(unsat_list, a_clause);
             a_clause->participating_unsat = newly_added_node;
+
+            context_update_clause_literal_purity_counts(this, a_clause, 1);
         }
     }
 }
@@ -314,6 +336,53 @@ int context_run_bcp(context_t* this) {
             // Otherwise, continue looping
         } else {
             // We already know if formula is true or false, return
+            return formula_value;
+        }
+    }
+}
+
+// Returns true if PLP has made some progress
+// Returns false if PLP could not find any pure literals to work on
+static bool context_run_plp_once(context_t* this) {
+    arraymap_t* variables = this->variables;
+    for (size_t i = 0; i < arraylist_size(variables->arraylist); i++) {
+        void* value = arraylist_get(variables->arraylist, i);
+        if (value) {
+            variable_t* variable = (variable_t*) value;
+            int var_purity = variable_get_purity(variable);
+            if (var_purity != 0) {
+                if (var_purity == 1) {
+                    // Decide that the variable must be set to true, PLP makes progress
+                    context_assign_variable_value(this, i, true);
+                    return true;
+                } else if (var_purity == -1) {
+                    // Decide that the variable must be set to false, PLP makes progress
+                    context_assign_variable_value(this, i, false);
+                    return true;
+                }
+                // There should be no case where there is a pure literal but doesn't have positive
+                // counts for neither negated or true literals
+            }
+        }
+    }
+    // No pure literals found, PLP makes no progress
+    return false;
+}
+
+// Returns an evaluation value of the formula
+int context_run_plp(context_t* this) {
+    while(true) {
+        int formula_value = context_evaluate_formula(this);
+        LOG_DEBUG("context_run_plp: Formula is currently true/false? %d\n", formula_value);
+        if (formula_value == 0) {
+            bool res = context_run_plp_once(this);
+            if (!res) {
+                // PLP made no progress, return an evaluation
+                return context_evaluate_formula(this);
+            }
+            // Otherwise, continue looping
+        } else {
+            // We already know formula result, return
             return formula_value;
         }
     }
