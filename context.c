@@ -347,22 +347,25 @@ static bool context_run_plp_once(context_t* this) {
     arraymap_t* variables = this->variables;
     for (size_t i = 0; i < arraylist_size(variables->arraylist); i++) {
         void* value = arraylist_get(variables->arraylist, i);
-        if (value) {
-            variable_t* variable = (variable_t*) value;
-            int var_purity = variable_get_purity(variable);
-            if (var_purity != 0) {
-                if (var_purity == 1) {
-                    // Decide that the variable must be set to true, PLP makes progress
-                    context_assign_variable_value(this, i, true);
-                    return true;
-                } else if (var_purity == -1) {
-                    // Decide that the variable must be set to false, PLP makes progress
-                    context_assign_variable_value(this, i, false);
-                    return true;
-                }
-                // There should be no case where there is a pure literal but doesn't have positive
-                // counts for neither negated or true literals
+        if (!value) {
+            continue;
+        }
+        variable_t* variable = (variable_t*) value;
+        if (variable->currentAssignment) { // Variable is assigned, nothing to do.
+            continue;
+        }
+        int var_purity = variable_get_purity(variable);
+        if (var_purity != 0) {
+            if (var_purity > 0) {
+                // Decide that the variable must be set to true, PLP makes progress
+                context_assign_variable_value(this, i, true);
+                add_deduced_assignment(this, (int) i);
+            } else {
+                // Decide that the variable must be set to false, PLP makes progress
+                context_assign_variable_value(this, i, false);
+                add_deduced_assignment(this, -(int) i);
             }
+            return true;
         }
     }
     // No pure literals found, PLP makes no progress
@@ -549,7 +552,8 @@ size_t context_get_first_variable_index(context_t* this) {
 // Maybe improvement: store the last index and then start from there,
 // if that yields nothing start from 0?
 static size_t context_find_next_sorted_index(context_t* this) {
-    for(size_t i = 0; i < this->numVariables; i++) {
+    static size_t previousIndex = 0; // Store the index of the last variable we decided and start from there
+    for(size_t i = previousIndex; i < this->numVariables; i++) {
         const size_t key = this->sorted_indices[i];
         const variable_t* next_variable_data = (variable_t*) arraymap_get(this->variables, key);
         // Somehow the key points to an invalid variable (?)
@@ -558,6 +562,22 @@ static size_t context_find_next_sorted_index(context_t* this) {
             break;
         }
         if(!next_variable_data->currentAssignment) {
+            previousIndex = i;
+            return key;
+        }
+    }
+
+    // We couldn't find anything starting from the previous index, so we just start from 0
+    for(size_t i = 0; i < previousIndex; i++) {
+        const size_t key = this->sorted_indices[i];
+        const variable_t* next_variable_data = (variable_t*) arraymap_get(this->variables, key);
+        // Somehow the key points to an invalid variable (?)
+        if(!next_variable_data) {
+            LOG_FATAL("%s:%lu: key %lu pointed to a NULL variable!\n", __FILE__, __LINE__, key);
+            break;
+        }
+        if(!next_variable_data->currentAssignment) {
+            previousIndex = i;
             return key;
         }
     }
