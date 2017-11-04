@@ -279,9 +279,19 @@ About the bug that led us to cleaning up the clauses during parsing.\\
 
 About the bug in the unsat tracker during unassignment that did not correctly re-evaluate the formula.\\
 
+\texttt{Dom, please write how you did your additional testing?}
+
 \section{The Undefined Behaviour Bug}
 
-Suggestion: free the linked list node content when removing a node. The node content might be used later in some cases but it's been freed. With large formulas we expect something bad to happen.\\
+Our undefined behaviour bug patch introduces a use-after-free in some circumstances during backtracking.\\
+
+As described in our optimizations section, we use two trackers to remember lists of clauses that are currently unsatisfied and currently false. At each assignment and un-assignment, we update the lists.\\
+
+It would be a plausible bug to free the element being removed from one of those lists while removing the linkedlist's node. We introduce the bug by freeing a clause when removing it from the list of false clauses. However, our clause objects are shared among other data structures as well, so they might be reused after this free.\\
+
+The bug doesn't always manifest itself when running the solver normally. In fact tests 2, 3 and 4 run correctly despite the bug, while test 1 crashes with a segmentation fault. These behaviours could be different using different compilers or operating systems.\\
+
+Clang's address sanitizer is able to correctly identify the use-after-free.\\
 
 \section{The Functional Bug}
 
