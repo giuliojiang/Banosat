@@ -20,11 +20,14 @@ typedef struct variable {
     int currentAssignment;
     int unsatTrueLiteralCount; // number of occurrences in true literals in unsat clauses
     int unsatNegatedLiteralCount; // number of occurrences in negated literals in unsat clauses
+    linkedlist_t* deduced_from; // linkedlist<size_t> a variable index.
+                                // The parent link to the primary variable assignment
+                                // that allowed this variable's deduction to be worked by BCP or PLP
 } variable_t;
 
 variable_t* variable_create();
-void variable_add_value_into_map(arraymap_t* map, literal_t lit, clause_t* clause);
 void variable_destroy(variable_t* variable);
+void variable_insert_clause(variable_t* this, clause_t* clause);
 void variable_set_value(variable_t* variable, bool new_value);
 void variable_set_raw_value(variable_t* variable, int new_value);
 void variable_set_unsat_true_literal_count(variable_t* variable, int new_count);

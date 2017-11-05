@@ -7,14 +7,22 @@
 #include "clause.h"
 #include "assignment_level.h"
 
+// Forward declarations -------------------------------------------------------
 
 void mergeSort(size_t *arr, size_t l, size_t r, arraymap_t* variables);
 
+static int context_eval_clause(context_t* this, clause_t* clause);
+
+static void context_add_clause_to_unsat(context_t* this, clause_t* clause);
+
+static void context_add_false_clause(context_t* this, clause_t* clause);
+
+// Constructor ----------------------------------------------------------------
+
 context_t* context_create() {
     context_t* ret = malloc(sizeof(context_t));
-    ret->formula = NULL;
-    ret->variables = NULL;
-    ret->conflicts = arraylist_create();
+    ret->formula = arraylist_create();
+    ret->variables = arraymap_create();
     ret->unsat = linkedlist_create();
     ret->false_clauses = linkedlist_create();
     ret->assignment_history = linkedlist_create();
@@ -39,20 +47,44 @@ static void context_update_clause_literal_purity_counts(context_t* this, clause_
   }
 }
 
-void context_set_formula_lambda(void* item, void* aux) {
-    clause_t* clause = (clause_t*) item;
-    context_t* this = (context_t*) aux;
-    linkedlist_t* unsat = (linkedlist_t*) this->unsat;
-    linkedlist_node_t* new_clause_node = linkedlist_add_last(unsat, clause);
-    clause->participating_unsat = new_clause_node;
-    context_update_clause_literal_purity_counts(this, clause, 1);
+// context_add_clause ---------------------------------------------------------
+
+void context_add_clause(context_t* this, clause_t* new_clause) {
+    // Add to the formula
+    arrayList_t* formula = this->formula; // arraylist<clause_t*>
+    arraylist_insert(formula, new_clause);
+
+    // Link participating clauses in the variables
+    arraymap_t* variables_map = this->variables; // arraymap<size_t, variable_t*>
+    arrayList_t* clause_literals = new_clause->literals; // arraylist<literal_t*>
+    for (unsigned i = 0; i < arraylist_size(clause_literals); i++) {
+        literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, i);
+        size_t variable_index = abs(*a_literal);
+        if (!arraymap_get(variables_map, variable_index)) {
+            arraymap_put(variables_map, variable_index, variable_create());
+        }
+        variable_t* a_variable_struct = (variable_t*) arraymap_get(variables_map, variable_index);
+        variable_insert_clause(a_variable_struct, new_clause);
+    }
+
+    // Try to evaluate the clause
+    int clause_eval = context_eval_clause(this, new_clause);
+
+    // Add to unsat if necessary
+    if (clause_eval == 0) {
+        context_add_clause_to_unsat(this, new_clause);
+    }
+
+    // Add to false if necessary
+    if (clause_eval == -1) {
+        context_add_false_clause(this, new_clause);
+    }
+
+    // Update purity counts
+    context_update_clause_literal_purity_counts(this, new_clause, 1);
 }
 
-void context_set_formula(context_t* this, arrayList_t* formula) {
-    this->formula = formula;
-
-    arraylist_foreach(formula, &context_set_formula_lambda, this);
-}
+// context_set_variables ------------------------------------------------------
 
 // Copies all the keys from variable (arraymap<literal, variable_t> into aux
 static void context_populate_sorted_indices(size_t key, void *UNUSED(value), void *aux) {
@@ -63,19 +95,19 @@ static void context_populate_sorted_indices(size_t key, void *UNUSED(value), voi
     aList[index++] = key;
 }
 
-void context_set_variables(context_t* this, arraymap_t* variables, size_t numVariables) {
-    this->variables = variables;
+// Finalizes the variables, and sorts them in decreasing order of the number of
+// clauses they participate in
+// After this call, no additional variables should be added to the context.
+// It is legal to add new clauses (typically conflict clauses) but they must not
+// contain any new variable
+void context_finalize_variables(context_t* this, size_t numVariables) {
     this->numVariables = numVariables;
     size_t* sortedIndices = malloc(sizeof(size_t) * numVariables);
     arraymap_foreach_pair(this->variables, &context_populate_sorted_indices, sortedIndices);
     // Sorts the array based on the number of clauses in which each variable appears in
     // Descending order.
-    mergeSort(sortedIndices, 0, numVariables-1, variables);
+    mergeSort(sortedIndices, 0, numVariables-1, this->variables);
     this->sorted_indices = sortedIndices;
-}
-
-void context_add_conflict_clause(context_t* this, clause_t* clause) {
-    arraylist_insert(this->conflicts, (void*) clause);
 }
 
 void context_print_formula(context_t* this) {
@@ -105,13 +137,18 @@ void context_destroy(context_t* this) {
     linkedlist_destroy(assignment_history, assignment_history_destroyer_func, NULL);
     linkedlist_destroy(this->false_clauses, NULL, NULL);
     linkedlist_destroy(this->unsat, NULL, NULL);
-    arraylist_destroy(this->conflicts, &arraylist_destroy_free, NULL);
     free(this->sorted_indices);
     free(this);
 }
 
 // context_assign_variable_value ----------------------------------------------
 
+// Evaluates a single clause
+//
+// Return:
+//     -1  The clause is False
+//      0  The clause is unknown
+//     +1  The clause is True
 static int context_eval_clause(context_t* this, clause_t* clause) {
     arraymap_t* variables = this->variables;
     int unassigned_literals = 0;
@@ -142,6 +179,20 @@ static int context_eval_clause(context_t* this, clause_t* clause) {
     }
 }
 
+static void context_add_clause_to_unsat(context_t* this, clause_t* clause) {
+    // Check if the clause is already in there
+    if (clause->participating_unsat) {
+        LOG_DEBUG("context_add_clause_to_unsat: attempting to add a clause to unsat list, but the clause's participating unsat field is not NULL, so it's probably already in the unsat list. Aborting...\n");
+        LOG_DEBUG("The Clause that was being added is:\n");
+        clause_print(clause);
+        abort();
+    }
+
+    linkedlist_t* unsat = this->unsat; // linkedlist<clause_t*>
+    linkedlist_node_t* unsat_node = linkedlist_add_last(unsat, clause);
+    clause->participating_unsat = unsat_node;
+}
+
 static void context_remove_clause_from_unsat(context_t* this, clause_t* clause) {
     LOG_DEBUG("context_remove_clause_from_unsat: removing following clause\n");
     clause_print(clause);
@@ -168,6 +219,9 @@ static void context_add_false_clause(context_t* this, clause_t* clause) {
 // Updates the variables map, unsat and false clauses lists and links
 void context_assign_variable_value(context_t* this, size_t variable_index, bool new_value) {
     variable_t* variable = (variable_t*) arraymap_get(this->variables, variable_index);
+    // Initially variables are self-deduced (arbitrary decision) unless a call
+    // to add_deduced_assignment is made
+    linkedlist_add_last(variable->deduced_from, (void*) variable_index);
     variable_set_value(variable, new_value);
 
     arrayList_t* participatingClauses = variable->participatingClauses;
@@ -190,6 +244,8 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
     // update assignment value to 0 in the variable map
     arraymap_t* variables = this->variables; // {unsigned -> variable_t*}
     variable_t* the_variable = (variable_t*) arraymap_get(variables, variable_index);
+    linkedlist_destroy(the_variable->deduced_from, NULL, NULL);
+    the_variable->deduced_from = linkedlist_create(); // Reset the deduced_from field
     variable_set_raw_value(the_variable, 0); // 0 is the undefined value
 
     // get the participating clauses of the variable
@@ -215,10 +271,7 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
         // undoing a variable assignment makes it undefined again
         linkedlist_node_t* participating_unsat = a_clause->participating_unsat;
         if (!participating_unsat && (context_eval_clause(this, a_clause) == 0)) {
-            linkedlist_t* unsat_list = this->unsat;
-            linkedlist_node_t* newly_added_node = linkedlist_add_last(unsat_list, a_clause);
-            a_clause->participating_unsat = newly_added_node;
-
+            context_add_clause_to_unsat(this, a_clause);
             context_update_clause_literal_purity_counts(this, a_clause, 1);
         }
     }
@@ -267,7 +320,7 @@ static unassigned_variables_in_clause_t count_unassigned_variables_in_clause(con
     return result;
 }
 
-static void add_deduced_assignment(context_t* this, int new_assignment) {
+static void add_deduced_assignment(context_t* this, int new_assignment, clause_t* current_clause) {
     // Get current assignment level
     linkedlist_t* assignment_history = this->assignment_history; // linkedlist<assignment_level_t*>
     linkedlist_node_t* last_assignment_node = assignment_history->tail->prev;
@@ -277,6 +330,28 @@ static void add_deduced_assignment(context_t* this, int new_assignment) {
     assignment_level_t* the_assignment_level = (assignment_level_t*) last_assignment_node->value;
     // Add to the assignment level's deduced assignments
     assignment_level_add_deduced_assignment(the_assignment_level, new_assignment);
+    // Get the primary assignment of the current level and set as variable's deduction parent
+    unsigned current_var_index = abs(new_assignment);
+    arraymap_t* variables_map = this->variables; // arraymap<size_t, variable_t*>
+    variable_t* current_var_struct = arraymap_get(variables_map, current_var_index);
+
+    // Add the deduced_from links
+    if (!current_clause) {
+        // If current clause is NULL, then the variable is self-deduced and does not depend
+        // on other deductions
+        linkedlist_add_last(current_var_struct->deduced_from, (void*) (unsigned long) abs(the_assignment_level->assignment));
+    } else {
+        // If clauses are not null, then the assignment is deduced from the other variables
+        // in the clause
+        arrayList_t* current_clause_literals = current_clause->literals; // arraylist<literal_t*>
+        for (unsigned i = 0; i < arraylist_size(current_clause_literals); i++) {
+            literal_t* a_lit_ptr = arraylist_get(current_clause_literals, i);
+            size_t a_var_idx = abs(*a_lit_ptr);
+            if (abs(new_assignment) != abs(a_var_idx)) {
+                linkedlist_add_last(current_var_struct->deduced_from, (void*) a_var_idx);
+            }
+        }
+    }
 }
 
 // Returns true if BCP has made some progress
@@ -313,7 +388,7 @@ static bool context_run_bcp_once(context_t* this) {
             // Make the assignment and update the assignment history
             LOG_DEBUG("BCP deciding to assign %lu to be %d\n", variable_index, new_assignment);
             context_assign_variable_value(this, variable_index, new_assignment);
-            add_deduced_assignment(this, literal_value);
+            add_deduced_assignment(this, literal_value, a_clause);
             return true;
         }
     }
@@ -359,11 +434,11 @@ static bool context_run_plp_once(context_t* this) {
             if (var_purity > 0) {
                 // Decide that the variable must be set to true, PLP makes progress
                 context_assign_variable_value(this, i, true);
-                add_deduced_assignment(this, (int) i);
+                add_deduced_assignment(this, (int) i, NULL);
             } else {
                 // Decide that the variable must be set to false, PLP makes progress
                 context_assign_variable_value(this, i, false);
-                add_deduced_assignment(this, -(int) i);
+                add_deduced_assignment(this, -(int) i, NULL);
             }
             return true;
         }
@@ -661,4 +736,65 @@ void mergeSort(size_t *arr, size_t l, size_t r, arraymap_t* variables)
 
         merge(arr, l, m, r, variables);
     }
+}
+
+// context_get_clauses_count --------------------------------------------------
+
+unsigned context_get_clauses_count(context_t* this) {
+    arrayList_t* formula = this->formula;
+    return arraylist_size(formula);
+}
+
+// context_get_first_false_clause ---------------------------------------------
+
+clause_t* context_get_first_false_clause(context_t* this) {
+    linkedlist_t* false_clauses = this->false_clauses; // linkedlist<clause_t*>
+    if (linkedlist_size(false_clauses) == 0) {
+        LOG_DEBUG("context_get_first_false_clause: False clauses list is empty\n");
+        abort();
+    }
+
+    return (clause_t*) false_clauses->head->next->value;
+}
+
+// context_get_primary_assignment_of ------------------------------------------
+
+// acc is linkedlist_t<int> is the result accumulator
+void context_get_primary_assignment_of(context_t* this, unsigned query_variable_index, linkedlist_t* acc) {
+    arraymap_t* variables = this->variables; // arraymap<size_t, variable_t*>
+    variable_t* query_variable = arraymap_get(variables, query_variable_index);
+    if (!query_variable) {
+        LOG_DEBUG("context_get_primary_assignment_of: Could not find variable %u from variables map\n", query_variable_index);
+        abort();
+    }
+    linkedlist_t* deduction_parent_variables = query_variable->deduced_from; // linkedlist<size_t>
+    if (linkedlist_size(deduction_parent_variables) == 0) {
+        LOG_DEBUG("context_get_primary_assignment_of: The deduced_from of variable %u is length 0. This should never happen because even if the variable is an arbitrary assignment it should be deduced from itself.\n", query_variable_index);
+        abort();
+    }
+
+    // For each of the parent links, add to the result if it's a primary assignment, otherwise
+    // go up the tree recursively
+    for (linkedlist_node_t* curr = deduction_parent_variables->head->next; curr != deduction_parent_variables->tail; curr = curr->next) {
+        size_t a_parent_idx = (size_t) curr->value;
+        variable_t* parent_variable = arraymap_get(variables, a_parent_idx);
+        int parent_value = parent_variable->currentAssignment;
+        if (parent_value == 0) {
+            LOG_DEBUG("context_get_primary_assignment_of: The deduction parent is currently unassigned. But a parent of a deducted variable must have an assignment in order to be the parent. Query variable = [%u], Parent variable = [%lu]\n", query_variable_index, a_parent_idx);
+            abort();
+        }
+
+        // If the parent index is the same as the query variable, we have found a root assignment and
+        // we add it to the accumulator
+        if (a_parent_idx == query_variable_index) {
+            int result = parent_value > 0 ? a_parent_idx : -a_parent_idx;
+            linkedlist_add_last(acc, (void*) (long) result);
+            return;
+        } else {
+            // Otherwise we recursively call and find parents
+            context_get_primary_assignment_of(this, a_parent_idx, acc);
+            return;
+        }
+    }
+
 }

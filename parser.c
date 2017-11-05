@@ -5,20 +5,9 @@
 #include "arraymap.h"
 #include "hashset.h"
 #include "variable.h"
+#include "literal.h"
 
-// input will be cast to a signed
-static unsigned literal_hash_func(void* input) {
-    signed literal = (signed) (long) input;
-    unsigned result = abs(literal);
-    return result;
-}
-
-// pa and pb are considered to be of type signed
-static bool literal_equal_func(void* pa, void* pb) {
-    return pa == pb;
-}
-
-clause_t* parser_parse_clause(char* line, arraymap_t* variables) {
+clause_t* parser_parse_clause(char* line) {
     LOG_DEBUG("parser_parse_clause: Starting a new clause...\n");
 
     char* savePtr;
@@ -58,7 +47,6 @@ clause_t* parser_parse_clause(char* line, arraymap_t* variables) {
             *litPtr = lit;
             LOG_DEBUG("parser_parse_clause: Adding literal %d\n", lit);
             arraylist_insert(ret->literals, (void*)litPtr);
-            variable_add_value_into_map(variables, lit, ret);
             token = strtok_r(NULL, " ", &savePtr);
         }
     }
