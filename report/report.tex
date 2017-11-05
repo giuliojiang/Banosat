@@ -271,7 +271,12 @@ How we detect duplicate literals in a clause, and discard clauses with p or ¬p
 
 \subsection{Variable decision heuristics}
 
-\texttt{Dom, please do this?}
+Our initial variable decision algorithm was very simple, as it involved selecting the first unassigned variable, ordered by the appearance order in the \texttt{CNF}, this was very simple to implement, but started showing its limits very early, for example with one hundred variables, the execution time was already in the order of minutes. \\
+To improve our decision logic, we decided to adopt an heuristic that takes inspiration from \emph{Dynamic Largest Individual Sum (DLIS)} heuristic, but simplified;
+\emph{DLIS} selects the variable that satisfies the highest number of clauses, a potential drawback of \emph{DLIS} is that the variables have to be sorted after each decision point, and this could potentially be expensive from a performance point of view. \\
+Our approach instead selects the unsatisfied variable that appears in the most clauses, and sorts the variables only once, at the beginning of the evaluation, this is done to ensure good performance, moreover, it is simple to implement and easy to debug.
+As a smaller optimisation, our algorithm remembers what was the last assigned variable and starts searching for the closest unassigned one from there, this is done to speed up the decision for huge numbers of variables. \\
+Using a wide variety of diverse \texttt{CNFs} we managed to obtain an average speed-up of 7x to 10x, for some test cases instead this resulted in unquantifiable speed-up, as one of our test \texttt{CNFs} (225 variables, dozens of thousands clauses) timed out after 1 hour with the initial approach, and completed in 16 minutes with the refined one.
 
 \section{Difficulties and testing}
 
@@ -279,7 +284,11 @@ About the bug that led us to cleaning up the clauses during parsing.\\
 
 About the bug in the unsat tracker during unassignment that did not correctly re-evaluate the formula.\\
 
-\texttt{Dom, please write how you did your additional testing?}
+The test formulae provided are useful for the parsing and initial testing, but are definitely not useful to assess the performance of the solver, this is due to the fact that performance for small number of variables or clauses is already very low without any heuristic or optimisation. \\
+To assess our performance we relied on formulae from \texttt{SATLIB}\footnote{http://www.cs.ubc.ca/~hoos/SATLIB/benchm.html}, the website provides various sets of randomly generated formulae ranging from medium to large.
+These formulae, plus the ones from \texttt{SATCOMP} resulted in a comprehensive set of queries to check for correctness and efficiency. \\
+Joining these formulae, we have a script that executes \texttt{MiniSat 2}\footnote{http://minisat.se/MiniSat.html} on each formula and stores the result for a comparison with our solver.
+This script allowed us to trace a bug related to \texttt{PLP} resulting in the execution terminating early and reporting the formula to be \texttt{UNSAT}; This bug only appeared with reasonably large formulae, which made the bug hard to spot by us. \\
 
 \section{The Undefined Behaviour Bug}
 
