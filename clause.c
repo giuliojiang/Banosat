@@ -25,6 +25,8 @@ clause_t* clause_create() {
     result->participating_unsat = NULL;
     result->participating_false_clauses = NULL;
     result->variables_removal_nodes = linkedlist_create();
+    result->unassigned_count = 0;
+    result->an_unassigned_literal = NULL;
     return result;
 }
 

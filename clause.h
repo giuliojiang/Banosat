@@ -12,6 +12,9 @@ typedef struct clause {
     linkedlist_node_t* participating_unsat; // linkedlist_node<clause_t*>
     linkedlist_node_t* participating_false_clauses; // linkedlist_node<clause_t*>
     linkedlist_t* variables_removal_nodes; // linkedlist<linkedlist_node<clause_t*>>
+    unsigned unassigned_count;
+    literal_t* an_unassigned_literal; // An unassigned literal. Valid if the unassigned_count is > 0
+                                      // There are no guarantees about what is the unassigned literal
 } clause_t;
 
 

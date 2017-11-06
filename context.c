@@ -220,16 +220,17 @@ static int context_eval_clause(context_t* this, clause_t* clause) {
     arraymap_t* variables = this->variables;
     int unassigned_literals = 0;
     for (size_t i = 0; i < arraylist_size(clause->literals); i++) {
-        literal_t literal = *((literal_t*) clause->literals->array[i]);
-        variable_t* variable = (variable_t*) arraymap_get(variables, abs(literal));
+        literal_t* literal = (literal_t*) clause->literals->array[i];
+        variable_t* variable = (variable_t*) arraymap_get(variables, abs(*literal));
         int currAssignment = variable->currentAssignment;
-        int literal_eval = literal * currAssignment;
+        int literal_eval = *literal * currAssignment;
         if (literal_eval < 0) {
             // Got a false literal
             // do nothing
         } else if (literal_eval == 0) {
             // Got an unassigned literal
             // Increment number of unassigned literals in this clause
+            clause->an_unassigned_literal = literal;
             unassigned_literals++;
         } else {
             // Got a positive literal
@@ -237,6 +238,7 @@ static int context_eval_clause(context_t* this, clause_t* clause) {
             return 1;
         }
     }
+    clause->unassigned_count = unassigned_literals;
     if (unassigned_literals > 0) {
         // There were no positive literals, but some of them don't have an assignment
         return 0;
@@ -336,7 +338,8 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
         // because this means the clause was well-defined (either T or F), but now
         // undoing a variable assignment makes it undefined again
         linkedlist_node_t* participating_unsat = a_clause->participating_unsat;
-        if (!participating_unsat && (context_eval_clause(this, a_clause) == 0)) {
+        int clause_eval = context_eval_clause(this, a_clause);
+        if (!participating_unsat && (clause_eval == 0)) {
             context_add_clause_to_unsat(this, a_clause);
             context_update_clause_literal_purity_counts(this, a_clause, 1);
         }
@@ -345,47 +348,6 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
 }
 
 // context_run_bcp ------------------------------------------------------------
-
-typedef struct unassigned_variables_in_clause {
-    size_t count;       // Number of unassigned literals in a clause
-    literal_t* literal; // The first unassigned literal found
-} unassigned_variables_in_clause_t;
-
-// Counts number of unassigned variables in a clause, and returns the first
-// unassigned variable, if any
-// If there is a false clause in the formula, this function will not be run
-// because BCP is run after the check on the entire formula
-static unassigned_variables_in_clause_t count_unassigned_variables_in_clause(context_t* this, clause_t* the_clause) {
-    // Get variables map
-    arraymap_t* variables = this->variables; // {unsigned -> variable_t*}
-
-    // Initialize counter
-    unassigned_variables_in_clause_t result;
-    result.count = 0;
-    result.literal = NULL;
-
-    // Get the literals
-    arrayList_t* literals = the_clause->literals; // arraylist<literal_t*>
-
-    // Loop through the literals
-    for (size_t i = 0; i < arraylist_size(literals); i++) {
-        literal_t* a_literal_ptr = (literal_t*) arraylist_get(literals, i);
-
-        // Increment counter if the literal is unassigned in variables map
-        size_t variable_index = abs(*a_literal_ptr);
-
-        // Get the variable data
-        variable_t* variable_data = arraymap_get(variables, variable_index);
-        if (variable_data->currentAssignment == 0) {
-            result.count++;
-            if (!result.literal) {
-                result.literal = a_literal_ptr;
-            }
-        }
-    }
-
-    return result;
-}
 
 static void add_deduced_assignment(context_t* this, int new_assignment, clause_t* current_clause) {
     // Get current assignment level
@@ -437,10 +399,10 @@ static bool context_run_bcp_once(context_t* this) {
             clause_print(a_clause);
             abort();
         }
-        unassigned_variables_in_clause_t unassigned_variables = count_unassigned_variables_in_clause(this, a_clause);
-        if (unassigned_variables.count == 1) {
+        unsigned unassigned_count = a_clause->unassigned_count;
+        if (unassigned_count == 1) {
             // Found a variable on which to do BCP
-            literal_t* literal_ptr = unassigned_variables.literal;
+            literal_t* literal_ptr = a_clause->an_unassigned_literal;
             literal_t literal_value = *literal_ptr;
             // Get variable index
             size_t variable_index = abs(literal_value);
