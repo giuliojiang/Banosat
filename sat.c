@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     arraymap_t* variables = arraymap_create();
     while ((getline(&line, &len, fp)) != -1) {
         if(strlen(line) == 1 && strncmp(line, "\0", 1)) { // Deals with empty lines
-            break;
+            continue;
         }
         if(line[0] == 'c') {
             continue;
