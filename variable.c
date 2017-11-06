@@ -14,17 +14,18 @@ variable_t* variable_create() {
 
 void variable_insert_clause(variable_t* this, clause_t* clause) {
     if(!this->participatingClauses) {
-        this->participatingClauses = arraylist_create();
+        this->participatingClauses = linkedlist_create();
     }
-    arraylist_insert(this->participatingClauses, clause);
+    linkedlist_node_t* inserted_node = linkedlist_add_last(this->participatingClauses, clause);
+    linkedlist_add_last(clause->variables_removal_nodes, (void*) inserted_node);
 }
 
 // variable_destroy -----------------------------------------------------------
 
 void variable_destroy(variable_t* variable) {
-    arraylist_destroy(variable->participatingClauses, NULL, NULL);
-    free(variable);
+    linkedlist_destroy(variable->participatingClauses, NULL, NULL);
     linkedlist_destroy(variable->deduced_from, NULL, NULL);
+    free(variable);
 }
 
 void variable_set_value(variable_t* variable, bool new_value) {

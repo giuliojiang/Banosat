@@ -17,11 +17,14 @@ static void context_add_clause_to_unsat(context_t* this, clause_t* clause);
 
 static void context_add_false_clause(context_t* this, clause_t* clause);
 
+static void context_remove_clause_from_unsat(context_t* this, clause_t* clause);
+
 // Constructor ----------------------------------------------------------------
 
 context_t* context_create() {
     context_t* ret = malloc(sizeof(context_t));
     ret->formula = arraylist_create();
+    ret->conflicts = linkedlist_create();
     ret->variables = arraymap_create();
     ret->unsat = linkedlist_create();
     ret->false_clauses = linkedlist_create();
@@ -49,11 +52,7 @@ static void context_update_clause_literal_purity_counts(context_t* this, clause_
 
 // context_add_clause ---------------------------------------------------------
 
-void context_add_clause(context_t* this, clause_t* new_clause) {
-    // Add to the formula
-    arrayList_t* formula = this->formula; // arraylist<clause_t*>
-    arraylist_insert(formula, new_clause);
-
+static void context_add_clause_setup_dependencies(context_t* this, clause_t* new_clause) {
     // Link participating clauses in the variables
     arraymap_t* variables_map = this->variables; // arraymap<size_t, variable_t*>
     arrayList_t* clause_literals = new_clause->literals; // arraylist<literal_t*>
@@ -82,6 +81,65 @@ void context_add_clause(context_t* this, clause_t* new_clause) {
 
     // Update purity counts
     context_update_clause_literal_purity_counts(this, new_clause, 1);
+}
+
+void context_add_clause(context_t* this, clause_t* new_clause) {
+    // Add to the formula
+    arrayList_t* formula = this->formula; // arraylist<clause_t*>
+    arraylist_insert(formula, new_clause);
+    context_add_clause_setup_dependencies(this, new_clause);
+}
+
+void context_add_conflict_clause(context_t* this, clause_t* new_clause) {
+    // Add to conflicts
+    linkedlist_t* conflicts = this->conflicts; // linkedlist<clause_t*>
+    linkedlist_add_last(conflicts, new_clause);
+    context_add_clause_setup_dependencies(this, new_clause);
+}
+
+void context_remove_first_conflict_clause(context_t* this) {
+    linkedlist_t* conflicts = this->conflicts; // linkedlist<clause_t*>
+    if (linkedlist_size(conflicts) == 0) {
+        return;
+    }
+
+    linkedlist_node_t* first_node = conflicts->head->next;
+    clause_t* removal_clause = (clause_t*) first_node->value;
+
+    // Remove from unsat
+    if (removal_clause->participating_unsat) {
+        context_remove_clause_from_unsat(this, removal_clause);
+    }
+
+    // Remove from false
+    if (removal_clause->participating_false_clauses) {
+        linkedlist_remove_node(this->false_clauses, removal_clause->participating_false_clauses);
+        removal_clause->participating_false_clauses = NULL;
+    }
+
+    // Remove links from referenced variables
+    arraymap_t* variables_map = this->variables; // arraymap<size_t, variable_t*>
+    linkedlist_t* variables_removal_nodes = removal_clause->variables_removal_nodes; // linkedlist<linkedlist_node<clause_t*>>
+    arrayList_t* clause_literals = removal_clause->literals; // arraylist<literal_t*>
+    linkedlist_node_t* curr = variables_removal_nodes->head->next;
+    for (unsigned i = 0; i < arraylist_size(clause_literals); i++) {
+        literal_t* a_literal = (literal_t*) arraylist_get(clause_literals, i);
+        size_t variable_index = abs(*a_literal);
+        variable_t* a_variable_struct = (variable_t*) arraymap_get(variables_map, variable_index);
+
+        // Get the corresponding removal node for the variable
+        linkedlist_node_t* next_removal = curr->value;
+        // Remove from the variables
+        linkedlist_remove_node(a_variable_struct->participatingClauses, next_removal);
+
+        curr = curr->next;
+    }
+
+    // Remove from linkedlist
+    linkedlist_remove_node(conflicts, first_node);
+
+    // Free the clause
+    clause_destroy(removal_clause, NULL);
 }
 
 // context_set_variables ------------------------------------------------------
@@ -137,6 +195,13 @@ void context_destroy(context_t* this) {
     linkedlist_destroy(assignment_history, assignment_history_destroyer_func, NULL);
     linkedlist_destroy(this->false_clauses, NULL, NULL);
     linkedlist_destroy(this->unsat, NULL, NULL);
+
+    for (linkedlist_node_t* curr = this->conflicts->head->next; curr != this->conflicts->tail; curr = curr->next) {
+        clause_t* a_clause = curr->value;
+        clause_destroy(a_clause, NULL);
+    }
+
+    linkedlist_destroy(this->conflicts, NULL, NULL);
     free(this->sorted_indices);
     free(this);
 }
@@ -224,9 +289,9 @@ void context_assign_variable_value(context_t* this, size_t variable_index, bool 
     linkedlist_add_last(variable->deduced_from, (void*) variable_index);
     variable_set_value(variable, new_value);
 
-    arrayList_t* participatingClauses = variable->participatingClauses;
-    for (size_t i = 0; i < arraylist_size(participatingClauses); i++) {
-        clause_t* clause = arraylist_get(participatingClauses, i);
+    linkedlist_t* participatingClauses = variable->participatingClauses;
+    for (linkedlist_node_t* curr = participatingClauses->head->next; curr != participatingClauses->tail; curr = curr->next) {
+        clause_t* clause = curr->value;
         int eval = context_eval_clause(this, clause);
         if (eval > 0) {
             context_remove_clause_from_unsat(this, clause);
@@ -249,11 +314,10 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
     variable_set_raw_value(the_variable, 0); // 0 is the undefined value
 
     // get the participating clauses of the variable
-    arrayList_t* participating_clauses = the_variable->participatingClauses; // arraylist<clause_t*>
+    linkedlist_t* participating_clauses = the_variable->participatingClauses; // arraylist<clause_t*>
 
-    // for each clause
-    for (size_t i = 0; i < arraylist_size(participating_clauses); i++) {
-        clause_t* a_clause = arraylist_get(participating_clauses, i);
+    for (linkedlist_node_t* curr = participating_clauses->head->next; curr != participating_clauses->tail; curr = curr->next) {
+        clause_t* a_clause = curr->value;
 
         // if participating_false_clauses is not NULL, remove the clause from the false_clauses
         // because if it's in the false clauses, the clause is currently false, but removing
@@ -275,6 +339,7 @@ void context_unassign_variable(context_t* this, size_t variable_index) {
             context_update_clause_literal_purity_counts(this, a_clause, 1);
         }
     }
+
 }
 
 // context_run_bcp ------------------------------------------------------------
@@ -689,8 +754,8 @@ static void merge(size_t* arr, size_t l, size_t m, size_t r, arraymap_t* variabl
         const arraymap_pair_t v2 = arraymap_find_next_entry(variables, R[j]-1);
         // The unchecked cast is possible because of sorted_indexes being built from variable,
         // therefore if a literal is there it must exist
-        const size_t length1 = arraylist_size(((variable_t*)v1.v)->participatingClauses);
-        const size_t length2 = arraylist_size(((variable_t*)v2.v)->participatingClauses);
+        const size_t length1 = linkedlist_size(((variable_t*)v1.v)->participatingClauses);
+        const size_t length2 = linkedlist_size(((variable_t*)v2.v)->participatingClauses);
         // Descending
         if (length1 >= length2)
         {
@@ -740,9 +805,8 @@ void mergeSort(size_t *arr, size_t l, size_t r, arraymap_t* variables)
 
 // context_get_clauses_count --------------------------------------------------
 
-unsigned context_get_clauses_count(context_t* this) {
-    arrayList_t* formula = this->formula;
-    return arraylist_size(formula);
+unsigned context_get_conflicts_count(context_t* this) {
+    return linkedlist_size(this->conflicts);
 }
 
 // context_get_first_false_clause ---------------------------------------------

@@ -24,6 +24,7 @@ clause_t* clause_create() {
     result->literals = arraylist_create();
     result->participating_unsat = NULL;
     result->participating_false_clauses = NULL;
+    result->variables_removal_nodes = linkedlist_create();
     return result;
 }
 

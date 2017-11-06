@@ -11,12 +11,14 @@ typedef struct clause {
     arrayList_t* literals; // elements are literal_t*
     linkedlist_node_t* participating_unsat; // linkedlist_node<clause_t*>
     linkedlist_node_t* participating_false_clauses; // linkedlist_node<clause_t*>
+    linkedlist_t* variables_removal_nodes; // linkedlist<linkedlist_node<clause_t*>>
 } clause_t;
 
 
 static inline void clause_destroy(void* elem, void* UNUSED(aux)) {
     clause_t* clause = (clause_t*) elem;
     arraylist_destroy(clause->literals, &arraylist_destroy_free, NULL);
+    linkedlist_destroy(clause->variables_removal_nodes, NULL, NULL);
     free(clause);
 }
 

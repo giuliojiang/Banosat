@@ -16,6 +16,7 @@ clause_t* parser_parse_clause(char* line) {
     ret->literals = arraylist_create();
     ret->participating_unsat = NULL;
     ret->participating_false_clauses = NULL;
+    ret->variables_removal_nodes = linkedlist_create();
     bool clause_valid = true;
 
     // Create temporary Hash Set to track the variables already seen

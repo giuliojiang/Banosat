@@ -16,7 +16,7 @@
 typedef struct variable {
     // Participating Clauses should be constructed at the beginning of the formula
     // and become read-only for the rest of the execution
-    arrayList_t* participatingClauses; // arraylist of clause_t
+    linkedlist_t* participatingClauses; // linkedlist<clause_t*>
     int currentAssignment;
     int unsatTrueLiteralCount; // number of occurrences in true literals in unsat clauses
     int unsatNegatedLiteralCount; // number of occurrences in negated literals in unsat clauses

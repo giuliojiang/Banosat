@@ -8,6 +8,7 @@
 
 typedef struct context {
     arrayList_t* formula; // arraylist<clause_t*>
+    linkedlist_t* conflicts; // linkedlist<clause_t*>: conflict clauses database
     size_t* sorted_indices;
     arraymap_t* variables; // arraymap<size_t, variable_t*>
     linkedlist_t* unsat; // linkedlist<clause_t*>: unsatisfied clauses
@@ -19,6 +20,10 @@ typedef struct context {
 context_t* context_create();
 
 void context_add_clause(context_t* this, clause_t* new_clause);
+
+void context_add_conflict_clause(context_t* this, clause_t* new_clause);
+
+void context_remove_first_conflict_clause(context_t* this);
 
 void context_finalize_variables(context_t* this, size_t numVariables);
 
@@ -54,7 +59,7 @@ size_t context_get_first_variable_index(context_t* this);
 // Returns 0 if reaches the end of the map
 size_t context_get_next_unassigned_variable(context_t* this);
 
-unsigned context_get_clauses_count(context_t* this);
+unsigned context_get_conflicts_count(context_t* this);
 
 // Returns the first item from false_clauses
 // Aborts execution if false_clauses is empty

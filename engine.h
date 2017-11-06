@@ -5,7 +5,7 @@
 
 #include "context.h"
 
-static const unsigned MAX_CLAUSES_COUNT = 2048;
+static const unsigned MAX_CONFLICT_CLAUSES = 0;
 
 bool engine_run_solver(context_t* context);
 

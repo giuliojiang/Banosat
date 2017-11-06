@@ -7,13 +7,6 @@
 #include "hashset.h"
 
 static void engine_create_conflict_clause(context_t* context) {
-    // Check current number of clauses
-    unsigned total_clauses_count = context_get_clauses_count(context);
-    if (total_clauses_count > MAX_CLAUSES_COUNT) {
-        LOG_DEBUG("Maximum number of clauses reached, not adding this conflict clause...\n");
-        return;
-    }
-
     // Get the first false clause
     clause_t* false_clause = context_get_first_false_clause(context);
     if (!false_clause) {
@@ -51,7 +44,12 @@ static void engine_create_conflict_clause(context_t* context) {
     hashset_destroy(seen_literals, NULL, NULL);
 
     // Add the conflict clause to the context
-    context_add_clause(context, conflict_clause);
+    context_add_conflict_clause(context, conflict_clause);
+
+    // Check current number of clauses
+    if (context_get_conflicts_count(context) > MAX_CONFLICT_CLAUSES) {
+        context_remove_first_conflict_clause(context);
+    }
 }
 
 bool engine_run_solver(context_t* context) {
@@ -82,7 +80,7 @@ bool engine_run_solver(context_t* context) {
             return true;
         } else if (formula_eval < 0) {
             // Attempt creating a conflict clause
-            engine_create_conflict_clause(context);
+            // engine_create_conflict_clause(context);
             // Formula is false, backtrack
             LOG_DEBUG("\nengine.c: decide with\n");
             context_print_current_state(context);
