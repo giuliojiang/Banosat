@@ -97,10 +97,10 @@ void context_add_conflict_clause(context_t* this, clause_t* new_clause) {
     context_add_clause_setup_dependencies(this, new_clause);
 }
 
-void context_remove_first_conflict_clause(context_t* this) {
+bool context_remove_first_conflict_clause(context_t* this) {
     linkedlist_t* conflicts = this->conflicts; // linkedlist<clause_t*>
     if (linkedlist_size(conflicts) == 0) {
-        return;
+        return false;
     }
 
     linkedlist_node_t* first_node = conflicts->head->next;
@@ -140,6 +140,8 @@ void context_remove_first_conflict_clause(context_t* this) {
 
     // Free the clause
     clause_destroy(removal_clause, NULL);
+
+    return true;
 }
 
 // context_set_variables ------------------------------------------------------
@@ -426,7 +428,7 @@ static bool context_run_bcp_once(context_t* this) {
     linkedlist_t* unsat = this->unsat; // linkedlist<clause_t*>
 
     // Search for clauses with 1 unassigned variable
-    for (linkedlist_node_t* curr = unsat->head->next; curr != unsat->tail; curr = curr->next) {
+    for (linkedlist_node_t* curr = unsat->tail->prev; curr != unsat->head; curr = curr->prev) {
         clause_t* a_clause = (clause_t*) curr->value;
         int clause_eval = context_eval_clause(this, a_clause);
         if (clause_eval != 0) {
@@ -463,7 +465,7 @@ static bool context_run_bcp_once(context_t* this) {
 }
 
 // Returns an evaluation value of the formula
-int context_run_bcp(context_t* this) {
+int context_run_bcp(context_t* this, unsigned* iterations) {
     while (true) {
         int formula_value = context_evaluate_formula(this);
         LOG_DEBUG("context_run_bcp: Formula is currently true/false? %d\n", formula_value);
@@ -474,6 +476,7 @@ int context_run_bcp(context_t* this) {
                 return context_evaluate_formula(this);
             }
             // Otherwise, continue looping
+            *iterations += 1;
         } else {
             // We already know if formula is true or false, return
             return formula_value;

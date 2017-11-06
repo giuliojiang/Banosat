@@ -23,7 +23,7 @@ void context_add_clause(context_t* this, clause_t* new_clause);
 
 void context_add_conflict_clause(context_t* this, clause_t* new_clause);
 
-void context_remove_first_conflict_clause(context_t* this);
+bool context_remove_first_conflict_clause(context_t* this);
 
 void context_finalize_variables(context_t* this, size_t numVariables);
 
@@ -37,7 +37,9 @@ void context_assign_variable_value(context_t* this, size_t variable_index, bool 
 
 void context_unassign_variable(context_t* this, size_t variable_index);
 
-int context_run_bcp(context_t* this);
+// <iterations>  A pointer to an unsigned that will be incremented with the
+//               number of iterations performed by BCP
+int context_run_bcp(context_t* this, unsigned* iterations);
 
 int context_run_plp(context_t* this);
 

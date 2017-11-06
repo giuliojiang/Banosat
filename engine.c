@@ -47,8 +47,11 @@ static void engine_create_conflict_clause(context_t* context) {
     context_add_conflict_clause(context, conflict_clause);
 
     // Check current number of clauses
-    if (context_get_conflicts_count(context) > MAX_CONFLICT_CLAUSES) {
-        context_remove_first_conflict_clause(context);
+    while (context_get_conflicts_count(context) > MAX_CONFLICT_CLAUSES) {
+        bool succ = context_remove_first_conflict_clause(context);
+        if (!succ) {
+            return;
+        }
     }
 }
 
@@ -67,12 +70,15 @@ bool engine_run_solver(context_t* context) {
         context_print_current_state(context);
         // BCP
         LOG_DEBUG("\nengine_run_solver: Running BCP...\n");
-        context_run_bcp(context);
+        unsigned bcp_iterations = 0;
+        int bcp_eval = context_run_bcp(context, &bcp_iterations);
         context_print_current_state(context);
         // PLP
-        LOG_DEBUG("\nengine_run_solver: Running PLP...\n");
-        context_run_plp(context);
-        context_print_current_state(context);
+        if (bcp_eval == 0) {
+            LOG_DEBUG("\nengine_run_solver: Running PLP...\n");
+            context_run_plp(context);
+            context_print_current_state(context);
+        }
         // Check state
         int formula_eval = context_evaluate_formula(context);
         if (formula_eval > 0) {
@@ -80,7 +86,9 @@ bool engine_run_solver(context_t* context) {
             return true;
         } else if (formula_eval < 0) {
             // Attempt creating a conflict clause
-            // engine_create_conflict_clause(context);
+            if (bcp_eval < 0 && bcp_iterations > 10) {
+                engine_create_conflict_clause(context);
+            }
             // Formula is false, backtrack
             LOG_DEBUG("\nengine.c: decide with\n");
             context_print_current_state(context);
