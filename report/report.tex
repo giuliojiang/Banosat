@@ -285,17 +285,18 @@ One of the custom tests we used highlighted an edge case our solver wasn't handl
 The test formulae provided are useful for the parsing and initial testing, but are definitely not useful to assess the performance of the solver, mainly due to the fact that performance for a small number of variables or clauses is already very fast without any heuristic or optimisation. To assess our performance we relied on formulae from \texttt{SATLIB}\footnote{http://www.cs.ubc.ca/~hoos/SATLIB/benchm.html} - this website provides various sets of randomly generated formulae ranging in sizes.
 These formulae, plus the ones from \texttt{SATCOMP} resulted in a comprehensive set of queries to check for correctness and efficiency. \\
 
-Alongside this, we have a script that executes \texttt{MiniSat 2}\footnote{http://minisat.se/MiniSat.html} on each formula and stores the result for a comparison with our solver. This script allowed us to trace a bug related to our \texttt{PLP} implementation that resulted in the execution terminating early and reporting the formula to be \texttt{UNSAT}. This bug only appeared with reasonably large formulae, which made the bug hard to spot by us.
+Alongside this, we have a script that executes \texttt{MiniSat 2}\footnote{http://minisat.se/MiniSat.html} on each formula and stores the result for a comparison with our solver. This script allowed us to trace a bug related to our \texttt{PLP} implementation that resulted in the execution terminating early and reporting the formula to be \texttt{UNSAT}. This bug only appeared with reasonably large formulae, which made the bug hard to spot by us.\\
 Additionally, due to time constraints, we did not implement watch literals, making our BCP algorithm quadratic in complexity as the number of clauses grows. Given enough time, we would implement watch literals as the next feature.
 
 
 \section{The Undefined Behaviour Bug}
 
-Our undefined behaviour bug patch introduces a use-after-free in some circumstances during backtracking.\\
+\textbf{MergeSort off-by-1} \\
 
-As described in our optimizations section, we use two trackers to remember lists of clauses that are currently unsatisfied and currently false. At each assignment and un-assignment, we update the lists. It would be a plausible bug to free the element being removed from one of those lists while removing the linkedlist's node. We introduce the bug by freeing a clause when removing it from the list of false clauses. However, our clause objects are shared among other data structures as well, so they might be reused after this free. \\
+Our undefined behaviour bug patch introduces an array out of bounds access. \\
 
-The bug doesn't always manifest itself when running the solver normally. In fact tests 2, 3 and 4 run correctly despite the bug, while test 1 crashes with a segmentation fault. These behaviours could be different using different compilers or operating systems. Clang's address sanitizer is able to correctly identify the use-after-free.
+As described in the optimizations section, we sort the list of variables to have the ones participating in the most clauses first. We introduce an array-out-of bounds access of 1 element past the end, which is undefined behaviour.
+The change does not produce any visible result on in our tests (although this could be certainly system dependant), but the Address Sanitizer is easily able to identify the out-of-bounds access.
 
 \section{The Functional Bug}
 
