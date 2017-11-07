@@ -8,32 +8,23 @@ variable_t* variable_create() {
     ret->currentAssignment = 0;
     ret->unsatTrueLiteralCount = 0;
     ret->unsatNegatedLiteralCount = 0;
+    ret->deduced_from = linkedlist_create();
     return ret;
 }
 
 void variable_insert_clause(variable_t* this, clause_t* clause) {
     if(!this->participatingClauses) {
-        this->participatingClauses = arraylist_create();
+        this->participatingClauses = linkedlist_create();
     }
-    arraylist_insert(this->participatingClauses, clause);
-}
-
-void variable_add_value_into_map(arraymap_t *map, literal_t lit, clause_t* clause) {
-    size_t absLit = (size_t) abs(lit);
-    variable_t* var = arraymap_get(map, absLit);
-    if(!var) {
-        // If the arraymap doesn't have an entry yet for this variable
-        // Create it
-        var = variable_create();
-        arraymap_put(map, absLit, var);
-    }
-    variable_insert_clause(var, clause);
+    linkedlist_node_t* inserted_node = linkedlist_add_last(this->participatingClauses, clause);
+    linkedlist_add_last(clause->variables_removal_nodes, (void*) inserted_node);
 }
 
 // variable_destroy -----------------------------------------------------------
 
 void variable_destroy(variable_t* variable) {
-    arraylist_destroy(variable->participatingClauses, NULL, NULL);
+    linkedlist_destroy(variable->participatingClauses, NULL, NULL);
+    linkedlist_destroy(variable->deduced_from, NULL, NULL);
     free(variable);
 }
 

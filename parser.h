@@ -2,8 +2,7 @@
 #define SAT_PARSER_H
 
 #include "clause.h"
-#include "arraymap.h"
 
-clause_t* parser_parse_clause(char* line, arraymap_t* variables);
+clause_t* parser_parse_clause(char* line);
 
 #endif
