@@ -162,7 +162,7 @@ static void context_populate_sorted_indices(size_t key, void *UNUSED(value), voi
 // contain any new variable
 void context_finalize_variables(context_t* this, size_t numVariables) {
     this->numVariables = numVariables;
-    size_t* sortedIndices = malloc(sizeof(size_t) * numVariables);
+    size_t* sortedIndices = calloc(sizeof(size_t), numVariables);
     arraymap_foreach_pair(this->variables, &context_populate_sorted_indices, sortedIndices);
     // Sorts the array based on the number of clauses in which each variable appears in
     // Descending order.

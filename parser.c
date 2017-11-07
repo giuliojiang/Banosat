@@ -12,11 +12,7 @@ clause_t* parser_parse_clause(char* line) {
 
     char* savePtr;
     char* token = strtok_r(line, " ", &savePtr);
-    clause_t* ret = (clause_t*) malloc(sizeof(clause_t));
-    ret->literals = arraylist_create();
-    ret->participating_unsat = NULL;
-    ret->participating_false_clauses = NULL;
-    ret->variables_removal_nodes = linkedlist_create();
+    clause_t* ret = clause_create();
     bool clause_valid = true;
 
     // Create temporary Hash Set to track the variables already seen
