@@ -281,6 +281,9 @@ We traverse known clauses in reverse order. In this way the newest conflict clau
 
 \subsection{Unit clause watch}
 
+To increase the effectiveness of BCP, we keep track of all the unsatisfied clauses with a single unassigned literal in a separate list. BCP does not need therefore to iterate through all unsatisfied lists and find those that only contain a single unassigned literal.\\
+This optimization yields large speed improvements in general as it reduces the underlying complexity of our BCP algorithm.
+
 \section{Difficulties and testing}
 
 One of the custom tests we used highlighted an edge case our solver wasn't handling correctly - using duplicated literals in a single clause. In any logical clause, having a duplicated literal adds no semantic value, so these can be ignored. However, our parser wasn't explicitly ignoring literals that were already added to our \texttt{variable\_map} structure. As adding literals updated other state across our solver, this meant we added 2 duplicate clauses to our \texttt{unsat} clause list. This meant when we removed that clause from the list, there would still be the duplicate left in the list. This lead to the solver prematurely deciding that a formula was unsatisfiable due to the extra unsatisfied clause. \\
@@ -296,14 +299,10 @@ Furthermore we did not implement Watch Literals in time, making our BCP algorith
 \section{The Undefined Behaviour Bug}
 
 Our undefined behaviour bug patch introduces a use-after-free in some circumstances during backtracking.\\
-
 As described in our optimizations section, we use two trackers to remember lists of clauses that are currently unsatisfied and currently false. At each assignment and un-assignment, we update the lists.\\
-
 It would be a plausible bug to free the element being removed from one of those lists while removing the linkedlist's node. We introduce the bug by freeing a clause when removing it from the list of false clauses. However, our clause objects are shared among other data structures as well, so they might be reused after this free.\\
-
 The bug doesn't always manifest itself when running the solver normally. In fact tests 2, 3 and 4 run correctly despite the bug, while test 1 crashes with a segmentation fault. These behaviours could be different using different compilers or operating systems.\\
-
-Clang's address sanitizer is able to correctly identify the use-after-free.\\
+Clang's address sanitizer is able to correctly identify the use-after-free.
 
 \section{The Functional Bug}
 
