@@ -279,10 +279,12 @@ The conflict database has a fixed maximum size, which is necessary because of th
 
 We traverse known clauses in reverse order. In this way the newest conflict clauses are analyzed first, allowing us to derive falsity faster in the average case.
 
+\subsection{Unit clause watch}
+
 \section{Difficulties and testing}
 
-TODO About the bug that led us to cleaning up the clauses during parsing.\\
-TODO About the bug in the unsat tracker during unassignment that did not correctly re-evaluate the formula.\\
+One of the custom tests we used highlighted an edge case our solver wasn't handling correctly - using duplicated literals in a single clause. In any logical clause, having a duplicated literal adds no semantic value, so these can be ignored. However, our parser wasn't explicitly ignoring literals that were already added to our \texttt{variable\_map} structure. As adding literals updated other state across our solver, this meant we added 2 duplicate clauses to our \texttt{unsat} clause list. This meant when we removed that clause from the list, there would still be the duplicate left in the list. This lead to the solver prematurely deciding that a formula was unsatisfiable due to the extra unsatisfied clause. \\
+
 The test formulae provided are useful for the parsing and initial testing, but are definitely not useful to assess the performance of the solver, this is due to the fact that performance for small number of variables or clauses is already very low without any heuristic or optimisation. \\
 To assess our performance we relied on formulae from \texttt{SATLIB}\footnote{http://www.cs.ubc.ca/~hoos/SATLIB/benchm.html}, the website provides various sets of randomly generated formulae ranging from medium to large.
 These formulae, plus the ones from \texttt{SATCOMP} resulted in a comprehensive set of queries to check for correctness and efficiency. \\
@@ -308,12 +310,8 @@ Clang's address sanitizer is able to correctly identify the use-after-free.\\
 
 \textbf{PLP current assignment ignore} \\
 
-For our functional bug, we have chosen to look at the case where in PLP we willfully ignore whether the current variable has been assigned to already or not. Because our implementation of PLP iterates over all the variables in our formula looking for pure literals, if one of these variables is a pure literal and has a pre-existing assignment, then PLP will attempt to overwrite its value. This is a particularly subtle bug as it only expresses itself when the previous assignment is contradictory to the value a pure literal should logically be in a formula - i.e. a purely negated literal \textit{should} be assigned to false in the formula to satisfy it (as PLP attempts to do). However, if the existing assignment to this variable is true, then PLP will ignore this and attempt 
+For our functional bug, we have chosen to look at the case where in PLP we willfully ignore whether the current variable has been assigned to already or not. Because our implementation of PLP iterates over all the variables in our formula looking for pure literals, if one of these variables is a pure literal and has a pre-existing assignment, then PLP will attempt to overwrite its value. This is a subtle bug as it only expresses itself when the previous assignment is contradictory to the value a pure literal should logically be in the existing unsat clauses - i.e. a purely negated literal \textit{should} be assigned to false in the formula to satisfy it (as PLP attempts to do with our current set of unsat clauses). However, if the existing assignment to this variable is true, then PLP will ignore this and attempt PLP using a negated assignment. This bug doesn't cause an infinite loop due to how we are keeping our assignment history. Further assignments made down the line by PLP have as a parent assignment the original assignment that the variable had, even though it isn't being taken into consideration. These PLP assignments will inevitably cause an unsat formula on the parent assignment because they are ignoring the assignment history. \\
 
-
-
-
-
-
+A concise example of when this happens can be found in the original \texttt{test4.cnf} file provided (a copy has been made in \texttt{funcerr.cnf}). When the first variable is decided to be \texttt{true} by our algorithm, the leftover unsat clause contains a negated literal of the first variable, and because it is our only unsat clause, this is an occurrence of a pure literal. This then instantly triggers the bug as PLP assigns that variable to \texttt{false}.
 
 \end{document}
