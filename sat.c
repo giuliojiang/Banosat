@@ -24,10 +24,10 @@ int main(int argc, char **argv) {
 
     char* line = NULL;
     size_t len = 0;
-    // our variables
     int numVariables = -1;
-    arrayList_t* clauses = arraylist_create();
-    arraymap_t* variables = arraymap_create();
+
+    context_t* context = context_create();
+
     while ((getline(&line, &len, fp)) != -1) {
         if(strlen(line) == 1 && strncmp(line, "\0", 1)) { // Deals with empty lines
             continue;
@@ -42,17 +42,15 @@ int main(int argc, char **argv) {
             assert(numVariables >= 0);
             LOG_DEBUG("type: %s, nVariables: %d\n", str, numVariables);
         } else {
-            clause_t* parsed_clause = parser_parse_clause(line, variables);
+            clause_t* parsed_clause = parser_parse_clause(line);
             if (parsed_clause) {
-                arraylist_insert(clauses, parsed_clause);
+                context_add_clause(context, parsed_clause);
             }
         }
     }
 
     // Create context
-    context_t* context = context_create();
-    context_set_variables(context, variables, (size_t)numVariables);
-    context_set_formula(context, clauses);
+    context_finalize_variables(context, (size_t) numVariables);
     context_print_current_state(context);
     
     bool satisfiable = engine_run_solver(context);

@@ -8,7 +8,7 @@
 
 typedef struct context {
     arrayList_t* formula; // arraylist<clause_t*>
-    arrayList_t* conflicts; // arraylist<clause_t*>
+    linkedlist_t* conflicts; // linkedlist<clause_t*>: conflict clauses database
     size_t* sorted_indices;
     arraymap_t* variables; // arraymap<size_t, variable_t*>
     linkedlist_t* unsat; // linkedlist<clause_t*>: unsatisfied clauses
@@ -19,9 +19,13 @@ typedef struct context {
 
 context_t* context_create();
 
-void context_set_formula(context_t* this, arrayList_t* formula);
+void context_add_clause(context_t* this, clause_t* new_clause);
 
-void context_set_variables(context_t* this, arraymap_t* variables, size_t numVariables);
+void context_add_conflict_clause(context_t* this, clause_t* new_clause);
+
+bool context_remove_first_conflict_clause(context_t* this);
+
+void context_finalize_variables(context_t* this, size_t numVariables);
 
 void context_add_conflict_clause(context_t* this, clause_t* clause);
 
@@ -33,7 +37,9 @@ void context_assign_variable_value(context_t* this, size_t variable_index, bool 
 
 void context_unassign_variable(context_t* this, size_t variable_index);
 
-int context_run_bcp(context_t* this);
+// <iterations>  A pointer to an unsigned that will be incremented with the
+//               number of iterations performed by BCP
+int context_run_bcp(context_t* this, unsigned* iterations);
 
 int context_run_plp(context_t* this);
 
@@ -54,5 +60,16 @@ size_t context_get_first_variable_index(context_t* this);
 // Returns the index of the next unassigned variable in the mapping
 // Returns 0 if reaches the end of the map
 size_t context_get_next_unassigned_variable(context_t* this);
+
+unsigned context_get_conflicts_count(context_t* this);
+
+// Returns the first item from false_clauses
+// Aborts execution if false_clauses is empty
+clause_t* context_get_first_false_clause(context_t* this);
+
+// Aborts execution if the current variable doesn't have a parent, or if the
+// parent is unassigned
+// <acc> is the data structure in which the results will be put, linkedlist<int>
+void context_get_primary_assignment_of(context_t* this, unsigned query_variable_index, linkedlist_t* acc);
 
 #endif

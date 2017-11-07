@@ -1,5 +1,5 @@
 # Testing flags
-CFLAGS=-I. -Wall -Wextra -Wpedantic $(flags) -g -DDEBUG
+CFLAGS=-I. -Wall -Wextra -Wpedantic $(flags) -g
 # Production flags
 #CFLAGS=-I. -Wall -Wextra -Wpedantic $(flags)
 
