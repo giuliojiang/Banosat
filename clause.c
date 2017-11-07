@@ -34,15 +34,17 @@ clause_t* clause_create() {
 
 // Adds a clause to the literal
 //
-// <seen_literals>    hashset<signed> The literals already seen in the current clause
-// return             true if added successfully
-//                    false if the clause is automatically True
-bool clause_add_literal(clause_t* this, int literal_value, hashset_t* seen_literals) {
+// <seen_literals>     hashset<signed> The literals already seen in the current clause
+// <contains_negation> will be updated to True if the clause already contains p when adding ¬p or viceversa
+// return              true if added successfully
+//                     false if the clause is automatically True
+bool clause_add_literal(clause_t* this, int literal_value, hashset_t* seen_literals, bool* contains_negation) {
     if (hashset_contains(seen_literals, (void*) (long) literal_value)) {
         // Do nothing, because the same literal already exists
         return true;
     } else if (hashset_contains(seen_literals, (void*) (long) (-literal_value))) {
         // The negation of this literal is in the same clause, the entire clause is True
+        *contains_negation = true;
         return false;
     } else {
         // Add to hashset

@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
             assert(numVariables >= 0);
             LOG_DEBUG("type: %s, nVariables: %d\n", str, numVariables);
         } else {
-            clause_t* parsed_clause = parser_parse_clause(line);
+            clause_t* parsed_clause = parser_parse_clause(line, context);
             if (parsed_clause) {
                 context_add_clause(context, parsed_clause);
             }

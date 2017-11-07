@@ -74,4 +74,6 @@ clause_t* context_get_first_false_clause(context_t* this);
 // <acc> is the data structure in which the results will be put, linkedlist<int>
 void context_get_primary_assignment_of(context_t* this, unsigned query_variable_index, linkedlist_t* acc);
 
+void context_initialize_variable(context_t* this, size_t var_index);
+
 #endif

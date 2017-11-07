@@ -7,7 +7,7 @@
 #include "variable.h"
 #include "literal.h"
 
-clause_t* parser_parse_clause(char* line) {
+clause_t* parser_parse_clause(char* line, context_t* context) {
     LOG_DEBUG("parser_parse_clause: Starting a new clause...\n");
 
     char* savePtr;
@@ -24,28 +24,17 @@ clause_t* parser_parse_clause(char* line) {
         if(lit == 0) {
             break;
         }
-        signed lit_neg = -lit;
-        // Check existence in hashset
-        if (hashset_contains(seen_literals, (void*) (long) lit)) {
-            // If the same literal exists, skip it
-            // Do nothing
-            LOG_DEBUG("parser_parse_clause: Skipping a literal as it's duplicated in the clause: %u\n", lit);
-            token = strtok_r(NULL, " ", &savePtr);
-        } else if (hashset_contains(seen_literals, (void*) (long) lit_neg)) {
-            // The negation of this literal is in the same clause,
-            // P v ¬P = True, so the entire clause is always true, so we skip it
-            LOG_DEBUG("parser_parse_clause: Skipping a clause as there is a literal and its negation: %u\n", lit);
+
+        context_initialize_variable(context, abs(lit));
+
+        bool contains_negation = false;
+        clause_add_literal(ret, lit, seen_literals, &contains_negation);
+
+        if (contains_negation) {
             clause_valid = false;
-            break;
-        } else {
-            // Add to hashset
-            hashset_add(seen_literals, (void*) (long) lit);
-            literal_t * litPtr = malloc(sizeof(literal_t));
-            *litPtr = lit;
-            LOG_DEBUG("parser_parse_clause: Adding literal %d\n", lit);
-            arraylist_insert(ret->literals, (void*)litPtr);
-            token = strtok_r(NULL, " ", &savePtr);
         }
+
+        token = strtok_r(NULL, " ", &savePtr);
     }
 
     // Free the temporary hashset
