@@ -305,6 +305,15 @@ Clang's address sanitizer is able to correctly identify the use-after-free.\\
 
 \section{The Functional Bug}
 
-Suggestion: we do not detect duplicate literals in a clause, causing potential cases where clauses can be added twice to the unsat list or to the false clauses.\\
+
+\textbf{PLP current assignment ignore} \\
+
+For our functional bug, we have chosen to look at the case where in PLP we willfully ignore whether the current variable has been assigned to already or not. Because our implementation of PLP iterates over all the variables in our formula looking for pure literals, if one of these variables is a pure literal and has a pre-existing assignment, then PLP will attempt to overwrite its value. This is a particularly subtle bug as it only expresses itself when the previous assignment is contradictory to the value a pure literal should logically be in a formula - i.e. a purely negated literal \textit{should} be assigned to false in the formula to satisfy it (as PLP attempts to do). However, if the existing assignment to this variable is true, then PLP will ignore this and attempt 
+
+
+
+
+
+
 
 \end{document}
