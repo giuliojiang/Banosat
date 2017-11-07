@@ -31,6 +31,7 @@ context_t* context_create() {
     ret->assignment_history = linkedlist_create();
     ret->sorted_indices = NULL;
     ret->numVariables = 0;
+    ret->unit_clauses = linkedlist_create();
     return ret;
 }
 
@@ -115,6 +116,12 @@ bool context_remove_first_conflict_clause(context_t* this) {
     if (removal_clause->participating_false_clauses) {
         linkedlist_remove_node(this->false_clauses, removal_clause->participating_false_clauses);
         removal_clause->participating_false_clauses = NULL;
+    }
+
+    // Remove from unit clauses
+    if (removal_clause->participating_unit_clause) {
+        linkedlist_remove_node(this->unit_clauses, removal_clause->participating_unit_clause);
+        removal_clause->participating_unit_clause = NULL;
     }
 
     // Remove links from referenced variables
@@ -204,6 +211,7 @@ void context_destroy(context_t* this) {
     }
 
     linkedlist_destroy(this->conflicts, NULL, NULL);
+    linkedlist_destroy(this->unit_clauses, NULL, NULL);
     free(this->sorted_indices);
     free(this);
 }
@@ -235,10 +243,28 @@ static int context_eval_clause(context_t* this, clause_t* clause) {
         } else {
             // Got a positive literal
             // The clause is true immediately
+            if (clause->participating_unit_clause) {
+                linkedlist_remove_node(this->unit_clauses, clause->participating_unit_clause);
+                clause->participating_unit_clause = NULL;
+            }
             return 1;
         }
     }
-    clause->unassigned_count = unassigned_literals;
+
+    // Update the unit clause: add to the linked list, or remove from it
+    if (unassigned_literals == 1) {
+        if (!clause->participating_unit_clause) {
+            linkedlist_node_t* new_node = linkedlist_add_last(this->unit_clauses, clause);
+            clause->participating_unit_clause = new_node;
+        }
+    }
+    if (unassigned_literals != 1) {
+        if (clause->participating_unit_clause) {
+            linkedlist_remove_node(this->unit_clauses, clause->participating_unit_clause);
+            clause->participating_unit_clause = NULL;
+        }
+    }
+
     if (unassigned_literals > 0) {
         // There were no positive literals, but some of them don't have an assignment
         return 0;
@@ -387,43 +413,31 @@ static void add_deduced_assignment(context_t* this, int new_assignment, clause_t
 // Returns false if BCP could not find any singleton-clause to work on
 static bool context_run_bcp_once(context_t* this) {
     // get unsatisfied clauses
-    linkedlist_t* unsat = this->unsat; // linkedlist<clause_t*>
-
-    // Search for clauses with 1 unassigned variable
-    for (linkedlist_node_t* curr = unsat->tail->prev; curr != unsat->head; curr = curr->prev) {
-        clause_t* a_clause = (clause_t*) curr->value;
-        int clause_eval = context_eval_clause(this, a_clause);
-        if (clause_eval != 0) {
-            LOG_DEBUG("context_run_bcp_once: this clause evaluates to %d\n", clause_eval);
-            LOG_DEBUG("But it is in the unsat list!!!\n");
-            clause_print(a_clause);
-            abort();
-        }
-        unsigned unassigned_count = a_clause->unassigned_count;
-        if (unassigned_count == 1) {
-            // Found a variable on which to do BCP
-            literal_t* literal_ptr = a_clause->an_unassigned_literal;
-            literal_t literal_value = *literal_ptr;
-            // Get variable index
-            size_t variable_index = abs(literal_value);
-            bool new_assignment;
-            if (literal_value > 0) {
-                // Assign true
-                new_assignment = true;
-            } else {
-                // Assign false
-                new_assignment = false;
-            }
-            // Make the assignment and update the assignment history
-            LOG_DEBUG("BCP deciding to assign %lu to be %d\n", variable_index, new_assignment);
-            context_assign_variable_value(this, variable_index, new_assignment);
-            add_deduced_assignment(this, literal_value, a_clause);
-            return true;
-        }
+    linkedlist_t* unit_unsat = this->unit_clauses; // linkedlist<clause_t*>
+    if (linkedlist_size(unit_unsat) == 0) {
+        return false;
     }
 
-    // No BCP processed
-    return false;
+    clause_t* a_clause = (clause_t*) unit_unsat->head->next->value;
+
+    // Found a variable on which to do BCP
+    literal_t* literal_ptr = a_clause->an_unassigned_literal;
+    literal_t literal_value = *literal_ptr;
+    // Get variable index
+    size_t variable_index = abs(literal_value);
+    bool new_assignment;
+    if (literal_value > 0) {
+        // Assign true
+        new_assignment = true;
+    } else {
+        // Assign false
+        new_assignment = false;
+    }
+    // Make the assignment and update the assignment history
+    LOG_DEBUG("BCP deciding to assign %lu to be %d\n", variable_index, new_assignment);
+    context_assign_variable_value(this, variable_index, new_assignment);
+    add_deduced_assignment(this, literal_value, a_clause);
+    return true;
 }
 
 // Returns an evaluation value of the formula
