@@ -28,8 +28,9 @@ static void engine_create_conflict_clause(context_t* context) {
         context_get_primary_assignment_of(context, query_variable_index, primary_assignment_variables);
         for (linkedlist_node_t* curr = primary_assignment_variables->head->next; curr != primary_assignment_variables->tail; curr = curr->next) {
             int a_primary_parent = (int) (long) curr->value;
-            bool add_res = clause_add_literal(conflict_clause, -a_primary_parent, seen_literals);
-            if (!add_res) {
+            bool contains_negation = false;
+            clause_add_literal(conflict_clause, -a_primary_parent, seen_literals, &contains_negation);
+            if (contains_negation) {
                 // Signal that this clause should not be added to the context as it's always true
                 // But then if the conflict clause is always true it's a contradiction of the current
                 // state of the formula itself, therefore we abort execution as it's a fatal error

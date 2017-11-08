@@ -29,6 +29,6 @@ clause_t* clause_create();
 
 void clause_print(clause_t* this);
 
-bool clause_add_literal(clause_t* this, int literal_value, hashset_t* seen_literals);
+bool clause_add_literal(clause_t* this, int literal_value, hashset_t* seen_literals, bool* contains_negation);
 
 #endif //SAT_CLAUSE_H

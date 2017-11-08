@@ -841,3 +841,12 @@ void context_get_primary_assignment_of(context_t* this, unsigned query_variable_
     }
 
 }
+
+// context_initialize_variable ------------------------------------------------
+
+void context_initialize_variable(context_t* this, size_t var_index) {
+    arraymap_t* variables_map = this->variables; // arraymap<size_t, variable_t*>
+    if (!arraymap_get(variables_map, var_index)) {
+        arraymap_put(variables_map, var_index, variable_create());
+    }
+}
