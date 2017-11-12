@@ -1,4 +1,4 @@
-# How to compile
+# Banosat
 
 A minimal and self-contained SAT solver based in C.
 
